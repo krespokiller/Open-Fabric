@@ -1,0 +1,9 @@
+results/
+node_modules/
+.venv/
+__pycache__/
+.next/
+target/
+vendor/
+.bench-install
+.DS_Store

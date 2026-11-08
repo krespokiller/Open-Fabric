@@ -1,0 +1,22 @@
+{
+  "label": "Django 5.2 + PostgreSQL (psycopg 3), served by gunicorn",
+  "healthPath": "/health",
+  "buildTimeoutSec": 900,
+  "startTimeoutSec": 120,
+  "readOnly": ["Dockerfile", ".dockerignore"],
+  "snapshotIgnore": [".venv/", "__pycache__/", ".bench-install"],
+  "native": {
+    "manifests": ["requirements.txt"],
+    "install": "python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt",
+    "build": ".venv/bin/python manage.py check",
+    "start": ".venv/bin/python manage.py migrate --noinput && exec .venv/bin/gunicorn shop.wsgi -b 0.0.0.0:8080 -w 2 --threads 4"
+  },
+  "selftestBreak": {
+    "file": "core/views.py",
+    "append": "this line is not valid python"
+  },
+  "selftestBug": {
+    "file": "core/discount.py",
+    "content": "def compute_discount(subtotal_minor, is_new_customer):\n    if not is_new_customer or subtotal_minor < 10_000_000:\n        return 0\n    return round(subtotal_minor * 0.1)\n"
+  }
+}

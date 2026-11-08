@@ -1,0 +1,16 @@
+{
+  "label": "Laravel 12 (PHP 8.3) + PostgreSQL",
+  "healthPath": "/health",
+  "buildTimeoutSec": 1200,
+  "startTimeoutSec": 180,
+  "readOnly": ["Dockerfile", ".dockerignore"],
+  "snapshotIgnore": ["vendor/", "node_modules/", ".bench-install"],
+  "selftestBreak": {
+    "file": "app/Http/Controllers/ShopController.php",
+    "append": "this is not php;"
+  },
+  "selftestBug": {
+    "file": "app/Shop/Discount.php",
+    "content": "<?php\n\nnamespace App\\Shop;\n\nfinal class Discount\n{\n    public static function compute(int $subtotalMinor, bool $isNewCustomer): int\n    {\n        if (! $isNewCustomer || $subtotalMinor < 10_000_000) {\n            return 0;\n        }\n\n        return (int) round($subtotalMinor * 0.1);\n    }\n}\n"
+  }
+}

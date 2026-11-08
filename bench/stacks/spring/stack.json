@@ -1,0 +1,22 @@
+{
+  "label": "Spring Boot 3.5 (Java 21, Maven) + PostgreSQL with Spring JDBC",
+  "healthPath": "/health",
+  "buildTimeoutSec": 1200,
+  "startTimeoutSec": 180,
+  "readOnly": ["Dockerfile", ".dockerignore"],
+  "snapshotIgnore": ["target/", ".bench-install"],
+  "native": {
+    "manifests": ["pom.xml"],
+    "install": "mvn -q -B dependency:go-offline",
+    "build": "mvn -q -B -DskipTests package",
+    "start": "exec java -jar target/app.jar"
+  },
+  "selftestBreak": {
+    "file": "src/main/java/com/example/shop/ShopController.java",
+    "append": "this is not java;"
+  },
+  "selftestBug": {
+    "file": "src/main/java/com/example/shop/Discount.java",
+    "content": "package com.example.shop;\n\npublic final class Discount {\n    private Discount() {}\n\n    public static long compute(long subtotalMinor, boolean isNewCustomer) {\n        if (!isNewCustomer || subtotalMinor < 10_000_000L) return 0;\n        return Math.round(subtotalMinor * 0.1);\n    }\n}\n"
+  }
+}

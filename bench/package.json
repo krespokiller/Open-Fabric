@@ -1,0 +1,15 @@
+{
+  "name": "openfabric-bench",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Measures whether verified, reusable pieces let small models build correct software with fewer tokens.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "validate-gold": "node src/cli.mjs validate-gold",
+    "bench": "node src/cli.mjs run",
+    "selftest": "node src/cli.mjs selftest",
+    "report": "node src/cli.mjs report"
+  }
+}

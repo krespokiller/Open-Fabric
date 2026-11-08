@@ -1,0 +1,28 @@
+{
+  "label": "Next.js 16 (App Router) + PostgreSQL with node-postgres",
+  "healthPath": "/health",
+  "buildTimeoutSec": 900,
+  "startTimeoutSec": 120,
+  "readOnly": ["Dockerfile", ".dockerignore"],
+  "snapshotIgnore": ["node_modules/", ".next/", "package-lock.json", ".bench-install", "next-env.d.ts", "tsconfig.tsbuildinfo"],
+  "codePiece": {
+    "dir": "arms/openfabric/code/nextjs",
+    "slotFile": "lib/of/discount.ts",
+    "hideFromPrompt": ["lib/of/db.ts", "lib/of/http.ts", "lib/of/handlers.ts"]
+  },
+  "native": {
+    "manifests": ["package.json"],
+    "install": "npm install --no-audit --no-fund",
+    "build": "npm run build",
+    "start": "npm start",
+    "env": { "NEXT_TELEMETRY_DISABLED": "1" }
+  },
+  "selftestBreak": {
+    "file": "app/checkout/route.ts",
+    "append": "export const brokenOnPurpose: number = 'not a number';"
+  },
+  "selftestBug": {
+    "file": "lib/of/discount.ts",
+    "content": "export function computeDiscount(subtotalMinor: number, isNewCustomer: boolean): number {\n  if (!isNewCustomer || subtotalMinor < 10_000_000) return 0;\n  return Math.round(subtotalMinor * 0.1);\n}\n"
+  }
+}
