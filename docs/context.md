@@ -10,7 +10,7 @@ Registro de cómo llegamos aquí, para retomar el trabajo sin repetir discusione
   - Segunda suite oculta `suites/hidden2.mjs` (26 tests), escrita por un agente que solo leyó `task/task.md` y `suites/lib.mjs`. Se reporta aparte de `hidden`.
   - Modelo: `hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M` con contexto 32768. `ai/qwen2.5-coder` ya no existe en Docker Hub y el GGUF partido del repo oficial de Qwen no carga en Docker Model Runner.
   - En CPU (12 núcleos) medimos 18 tokens/s de lectura de prompt y ~2 tokens/s de salida: ~40 minutos por llamada. El piloto necesita la GPU (RTX 2070).
-- **Siguiente paso:** activar la inferencia por GPU, confirmar los criterios de T2 a T4, prueba corta y piloto.
+- **Siguiente paso:** prueba corta y piloto (GPU activa: ~1,500 tokens/s de lectura y ~65 tokens/s de salida).
 
 ## La visión: de taller a fábrica
 
@@ -25,9 +25,9 @@ Cada tesis tiene su criterio escrito **antes** de correrla. Si una corrida no cu
 | # | Tesis | Cómo se prueba | Criterio de éxito | Estado |
 | --- | --- | --- | --- | --- |
 | T1 | Con la pieza, un modelo chico llega a software correcto gastando menos | Piloto: `of-spec` contra `tests` | En cada stack, `of-spec` pasa más tests ocultos (`hidden`, media por corrida) que `tests` y gasta al menos 30% menos tokens por test pasado | **Fijado** (2026-11-09) |
-| T2 | Con la pieza sale correcto a la primera | Mismo piloto | En cada stack, `of-spec` tiene más corridas 100% correctas que `tests` | Propuesto, confirmar antes del piloto |
-| T3 | El juez no está sesgado a favor de la pieza | `hidden2` en el mismo piloto | En cada stack, `of-spec` también supera a `tests` en la media de `hidden2` | Propuesto, confirmar antes del piloto |
-| T4 | Funciona en cualquier stack, incluido el legacy | Matriz completa con Spring Boot y Laravel | T1 se cumple también en Spring Boot y Laravel | Propuesto, confirmar antes de la matriz |
+| T2 | Con la pieza sale correcto a la primera | Mismo piloto | En cada stack, `of-spec` tiene más corridas 100% correctas que `tests` | **Fijado** (2026-11-09) |
+| T3 | El juez no está sesgado a favor de la pieza | `hidden2` en el mismo piloto | En cada stack, `of-spec` también supera a `tests` en la media de `hidden2` | **Fijado** (2026-11-09) |
+| T4 | Funciona en cualquier stack, incluido el legacy | Matriz completa con Spring Boot y Laravel | T1 se cumple también en Spring Boot y Laravel | **Fijado** (2026-11-09) |
 | T5 | Funciona con prompts vagos | Brazo nuevo con la tarea escrita como la diría un cliente | Se fija antes de diseñar el brazo | Pendiente |
 | T6 | Sirve también con modelos grandes | Mismo experimento con un modelo en la nube | Se fija antes de correrlo | Pendiente |
 | T7 | El calibre funciona en frontend | Pieza de UI con tests end-to-end | Se fija antes de escribir la pieza | Pendiente |
@@ -88,4 +88,4 @@ Evidencia de investigación usada:
 - **Nombre:** existe la OpenFabrics Alliance. Hay que revisar conflictos antes de lanzar.
 - **Propiedad:** definir de quién es el proyecto antes de que tenga tracción.
 - **Primer stack con código listo:** Next.js por defecto; confirmar con los proyectos reales donde se va a usar.
-- **Criterios de T2 a T7:** ver la tabla de tesis. T1 quedó fijado el 2026-11-09.
+- **Criterios de T5 a T7:** se fijan antes de diseñar cada prueba. T1 a T4 quedaron fijados el 2026-11-09.
