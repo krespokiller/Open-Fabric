@@ -6,20 +6,32 @@
 
 > Estado: investigación. Estamos probando la tesis con un experimento público y reproducible antes de construir el producto. Aquí todavía no hay software para producción.
 
-## La idea
+## La idea: de taller a fábrica
 
-La IA abarató escribir código, pero no entregar software correcto. OpenFabric propone que los desarrolladores conecten al agente que ya usan un catálogo de piezas verificadas:
+Hoy un agente de IA escribe cada sistema desde cero y a medida. Es un motor eléctrico metido en un taller de vapor: va más rápido, pero el taller sigue igual. OpenFabric es la fábrica: el software se arma con piezas que ya se sabe que funcionan.
 
-- **Piezas en varios niveles:** átomos (dinero, verificación HMAC), moléculas (idempotencia, receptores de webhooks, ledgers), organismos (checkout, login con OTP, cobro mensual), arquitecturas y blueprints.
-- **El agente selecciona y ensambla.** La herramienta copia el código verificado y el modelo solo escribe huecos pequeños y especificados.
-- **Un verificador decide.** Cada pieza trae contrato y tests, así que lo que escribe el modelo lo juzga código, no la confianza.
-- **Cualquier stack.** El contrato y los tests de una pieza sirven para cualquier stack, incluido el legacy; el código listo arranca con uno o dos.
+![De taller a fábrica: tres láminas](docs/img/de-taller-a-fabrica.svg)
 
-El resultado esperado: menos tokens, prompts más vagos que igual funcionan, y menos bugs en lo que importa (dinero, idempotencia, concurrencia, seguridad).
+- **1. A medida (vapor, siglo XIX).** Una caldera mueve todo el taller con un solo eje. El artesano lima cada pieza hasta que encaja, y ninguna sirve para otra máquina. *El software antes de la IA: cada equipo escribe a mano su checkout, su webhook y su login.*
+- **2. Más rápido, el mismo taller (dínamo, 1900; IA, hoy).** Las primeras fábricas eléctricas cambiaron la caldera por un motor y dejaron todo lo demás igual. La productividad casi no subió en décadas: la paradoja del dínamo. *El software hoy: el agente reescribe todo desde cero en cada proyecto y gasta tokens reinventando el mismo webhook.*
+- **3. Piezas y calibre (OpenFabric).** Las piezas son estándar y están en estantes. Antes de entrar a la línea, un calibre dice si pasan o no. El ensamblador arma el producto completo, capa por capa, en tu stack. *Tu software se arma con piezas probadas y solo se hace a medida lo que de verdad es tuyo.*
+
+### Qué es cada cosa
+
+| En la fábrica | En OpenFabric |
+| --- | --- |
+| Pieza intercambiable | Una parte de software que ya se sabe que funciona: un cobro, un login, un carrito, una app entera |
+| Calibre "pasa / no pasa" | La garantía de que la pieza hace lo que promete, en cualquier lenguaje o framework |
+| Estantes | El catálogo, desde piezas chicas hasta sistemas completos de una industria |
+| Ensamblador en la línea | Tu asistente de IA, que arma en vez de reinventar |
+| Ajuste a mano que queda | Lo que hace único a tu producto. Ahí va el esfuerzo |
+| Motor eléctrico | La IA. Es la energía, no la fábrica |
+
+El calibre es lo que hace intercambiables las piezas: sin él seguís en el taller de vapor. La analogía histórica sigue a Paul David, "The Dynamo and the Computer" (1990).
 
 ## Primer paso: ¿de verdad ayuda?
 
-[`bench/`](bench) es el experimento. Un modelo pequeño construye el mismo servicio de checkout en Next.js, Django, Spring Boot y Laravel, con y sin una pieza de OpenFabric, y una suite oculta de 21 tests HTTP juzga cada resultado. Mide tokens por test pasado. Ver [bench/README.es.md](bench/README.es.md).
+[`bench/`](bench) es el experimento. Un modelo pequeño construye el mismo servicio de checkout en Next.js, Django, Spring Boot y Laravel, con y sin una pieza de OpenFabric, y dos suites ocultas juzgan cada resultado: 21 tests HTTP y otros 26 escritos de forma independiente, solo a partir de la tarea. Mide tokens por test pasado. Ver [bench/README.es.md](bench/README.es.md).
 
 ## Estructura
 

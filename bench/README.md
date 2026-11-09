@@ -18,7 +18,7 @@ Every arm gets the same task ([task/task.md](task/task.md)): a checkout service 
 
 **Stop rule (same for every arm):** a run stops when every check its arm can see passes, or when the budget runs out, so arms that see more checks may use more calls. **`tests` is the control:** it has the same feedback and stop rule as `of-spec`, without the piece, so `of-spec` versus `tests` measures the value of the piece rather than the value of having tests.
 
-**The judge** is a hidden suite of 21 black-box HTTP tests ([suites/hidden.mjs](suites/hidden.mjs)) that no model ever sees. It runs at the end of each run on a fresh start with an empty database. Its values differ from those in the task, the piece and the public tests.
+**The judge** is a hidden suite of 21 black-box HTTP tests ([suites/hidden.mjs](suites/hidden.mjs)) that no model ever sees. It runs at the end of each run on a fresh start with an empty database. A second hidden suite of 26 tests ([suites/hidden2.mjs](suites/hidden2.mjs)) was written by an agent that read only the task and the suite helpers, never the piece or the first suite; its score is reported separately to check that results do not depend on who wrote the judge. Its values differ from those in the task, the piece and the public tests.
 
 **Stacks:** Next.js 16 + Postgres (primary; the only one with a code piece), Django 5.2, Spring Boot 3.5 and Laravel 12, all on PostgreSQL.
 
@@ -26,36 +26,36 @@ Every arm gets the same task ([task/task.md](task/task.md)): a checkout service 
 
 ## What has been validated
 
-| Stack | Reference implementation | Validated by the authors |
+| Stack | Reference implementation | Validated |
 | --- | --- | --- |
-| Next.js | 33/33 tests (smoke, public, hidden) | Yes, native runtime with a local PostgreSQL |
-| Django | 33/33 | Yes, native runtime with a local PostgreSQL |
-| Spring Boot | written and reviewed | **No**: no Maven Central access in the authoring environment |
-| Laravel | written, reviewed, syntax-checked | **No**: no Packagist access in the authoring environment |
+| Next.js | 59/59 tests (smoke, public, both hidden suites) | Docker (2026-11-09) |
+| Django | 59/59 | Docker (2026-11-09) |
+| Spring Boot | 59/59 | Docker (2026-11-09) |
+| Laravel | 59/59 | Docker (2026-11-09) |
 
-Mutation checks confirmed that the judge catches a stock race (H15), a missing signature check (H16), a replay that creates a second order (H09, H10) and a discount without cap or half-even rounding (H05 to H07). An independent review looked for bias and bugs; its findings are fixed. The Docker runtime was not exercised in the authoring environment, so step 1 below is mandatory.
+Mutation checks confirmed that the judge catches a stock race (H15), a missing signature check (H16), a replay that creates a second order (H09, H10) and a discount without cap or half-even rounding (H05 to H07). An independent review looked for bias and bugs; its findings are fixed. Docker mode has been validated on all four stacks, but step 1 below is still mandatory on every new machine.
 
 ## Quick start
 
 ```bash
-# 1. The judge must be fair on your machine: all four stacks must report 33/33 and some charge requests.
+# 1. The judge must be fair on your machine: all four stacks must report 59/59 and some charge requests.
 node src/cli.mjs validate-gold
 
 # 2. The harness end to end with a fake model (no tokens spent).
 node src/cli.mjs selftest --stacks nextjs,django
 
 # 3. A model in Docker Model Runner (Docker Desktop: Settings > AI > enable Model Runner and host-side TCP on 12434).
-docker model pull ai/qwen2.5-coder
-docker model configure --context-size 32768 ai/qwen2.5-coder
+docker model pull hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M
+docker model configure --context-size 32768 hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M
 
 # 4. A pilot: 9 cells x 3 runs.
-node src/cli.mjs run --model ai/qwen2.5-coder --stacks nextjs,django --runs 3 --budget 6 --label "pilot"
+node src/cli.mjs run --model hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M --stacks nextjs,django --runs 3 --budget 6 --label "pilot"
 
 # 5. The full matrix: 17 cells x 5 runs.
-node src/cli.mjs run --model ai/qwen2.5-coder --runs 5 --budget 8
+node src/cli.mjs run --model hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M --runs 5 --budget 8
 ```
 
-The default `--base-url` is `http://localhost:12434/engines/v1`; any OpenAI-compatible endpoint works (`--base-url`, `--api-key`). The llama.cpp default context of 4,096 tokens is too small: first prompts are 2,400 to 4,300 tokens and later ones include the code written so far. A context overflow stops the matrix with a clear message instead of being scored as a model failure.
+The default `--base-url` is `http://localhost:12434/engines/v1`; any OpenAI-compatible endpoint works (`--base-url`, `--api-key`). `ai/qwen2.5-coder` is no longer on Docker Hub. Use a **single-file** GGUF: multi-file (split) GGUFs such as the official `Qwen/Qwen2.5-Coder-7B-Instruct-GGUF` fail to load in Docker Model Runner with `invalid split file name`. A 7B model on CPU is not viable for the pilot: on a 12-core machine we measured ~2 output tokens/s, about 40 minutes per call, so enable GPU inference. The llama.cpp default context of 4,096 tokens is too small: first prompts are 2,400 to 4,300 tokens and later ones include the code written so far. A context overflow stops the matrix with a clear message instead of being scored as a model failure.
 
 Re-running with the same `--out` directory resumes: finished runs are skipped, and runs that hit environment errors (model server down, Docker out of disk, container clock skew) are retried; they are never counted. The harness refuses to resume if the model, temperature, budget or any experiment file changed.
 
@@ -72,7 +72,7 @@ Results land in `results/<dir>/`: `report.md` (tables per stack and arm with mea
 ## Limitations
 
 - One piece only (checkout), not a catalog.
-- The same author wrote the piece and the judge. Hidden values differ, every arm's task states the same rules and the references pass 100%, but a second hidden suite written by someone who has not seen the piece would be better.
+- The same author wrote the piece and the first hidden suite. Hidden values differ, every arm's task states the same rules and the references pass 100%. A second hidden suite (`hidden2`) was written by an agent that never saw the piece or the first suite; a suite written by an independent person would be stronger still.
 - `of-code` is partly correct by construction: its installed code is the reference validated against the judge, so its result measures mounting and slot-filling, not the piece's correctness.
 - The `docs` bundle was curated by us, deliberately generous (it covers PostgreSQL concurrency and rounding) so the alternative competes at its best.
 - The agent loop is minimal: each call gets the task, the arm's context, the current files and the last feedback; the model cannot run commands. Results apply to this loop, not to every coding agent.

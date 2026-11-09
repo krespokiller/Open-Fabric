@@ -1,5 +1,5 @@
 // validate-gold: proves the judge is fair. For each stack, the reference implementation
-// must pass 100% of smoke, public and hidden tests before any model run is meaningful.
+// must pass 100% of smoke, public and both hidden suites before any model run is meaningful.
 import path from 'node:path';
 import { createWorkspace, loadStack } from './workspace.mjs';
 import { startApp } from './runner.mjs';
@@ -29,7 +29,7 @@ export async function validateGold({ stacks, runtime, pgAdminUrl, outDir }) {
         continue;
       }
       await app.psp.reset();
-      const results = await judge(app.baseUrl, app.psp, ['smoke', 'public', 'hidden']);
+      const results = await judge(app.baseUrl, app.psp, ['smoke', 'public', 'hidden', 'hidden2']);
       const pspStats = await app.psp.stats();
       await app.stop();
       const failed = results.filter((r) => !r.pass);

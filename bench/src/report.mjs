@@ -51,10 +51,11 @@ function armRow(arm, rs) {
   const sumPassed = passed.reduce((a, b) => a + b, 0);
   const perPass = sumPassed ? total.reduce((a, b) => a + b, 0) / sumPassed : Infinity;
   const perfect = rs.filter((r) => r.hiddenTotal && r.hiddenPassed === r.hiddenTotal).length;
-  return `| ${ARM_LABEL[arm] || arm} | ${rs.length} | ${pm(rates, 1)}% | ${perfect}/${rs.length} | ${pm(rs.map((r) => r.promptTokens))} | ${pm(rs.map((r) => r.completionTokens))} | ${pm(total)} | ${Number.isFinite(perPass) ? fmt(perPass) : 'no test passed'} | ${pm(rs.map((r) => r.calls), 1)} | ${pm(rs.map((r) => r.wallMs / 60000), 1)} |`;
+  const rates2 = rs.filter((r) => r.hidden2Total).map((r) => (100 * r.hidden2Passed) / r.hidden2Total);
+  return `| ${ARM_LABEL[arm] || arm} | ${rs.length} | ${pm(rates, 1)}% | ${rates2.length ? `${pm(rates2, 1)}%` : '—'} | ${perfect}/${rs.length} | ${pm(rs.map((r) => r.promptTokens))} | ${pm(rs.map((r) => r.completionTokens))} | ${pm(total)} | ${Number.isFinite(perPass) ? fmt(perPass) : 'no test passed'} | ${pm(rs.map((r) => r.calls), 1)} | ${pm(rs.map((r) => r.wallMs / 60000), 1)} |`;
 }
 
-const HEADER = '| Arm | Runs | Hidden tests passed | Fully correct runs | Input tokens | Output tokens | Total tokens | Tokens per passed test | Model calls | Minutes |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |';
+const HEADER = '| Arm | Runs | Hidden tests passed | Second hidden suite passed | Fully correct runs | Input tokens | Output tokens | Total tokens | Tokens per passed test | Model calls | Minutes |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |';
 
 export function writeReport(dir) {
   const meta = fs.existsSync(path.join(dir, 'meta.json')) ? readJson(path.join(dir, 'meta.json')) : {};
@@ -69,7 +70,7 @@ export function writeReport(dir) {
   if (runs.some((r) => r.tokensEstimated)) lines.push('**Warning:** the model server did not report token usage for some calls; those counts are estimated as characters / 4.\n');
   const suspicious = runs.reduce((a, r) => a + (r.suspiciousUsageCalls || 0), 0);
   if (suspicious) lines.push(`**Warning:** in ${suspicious} call(s) the server reported fewer than half the prompt tokens expected from the prompt length. It may be counting only non-cached tokens or truncating the prompt; compare \`promptTokens\` and \`promptEstimate\` in \`metrics.json\` before publishing.\n`);
-  lines.push('**How to read it.** Every arm gets the same task, the same model, the same maximum number of calls and the same smoke-check feedback. A run stops when every check its arm can see passes, or when the budget runs out. The `tests` arm also sees the 8 public tests; the OpenFabric arms see them plus the piece, so `of-spec` versus `tests` isolates the value of the piece. All arms are judged by the same hidden HTTP suite on a fresh start; no model ever sees it. "Tokens per passed test" is total tokens divided by hidden tests passed, summed over runs.');
+  lines.push('**How to read it.** Every arm gets the same task, the same model, the same maximum number of calls and the same smoke-check feedback. A run stops when every check its arm can see passes, or when the budget runs out. The `tests` arm also sees the 8 public tests; the OpenFabric arms see them plus the piece, so `of-spec` versus `tests` isolates the value of the piece. All arms are judged by the same hidden HTTP suite on a fresh start; no model ever sees it. "Tokens per passed test" is total tokens divided by hidden tests passed, summed over runs. "Second hidden suite passed" comes from an independent suite (tests X01 onward) written from the task alone, without seeing the piece or the primary suite; it checks that the result does not depend on who wrote the judge.');
   lines.push('');
   if (runs.some((r) => r.arm === 'of-code')) {
     lines.push('**About of-code.** Its installed code is the same as the Next.js reference implementation that was validated against the hidden suite, so its pass rate measures how well the model mounts the piece and fills the slot, and is partly correct by construction.');
@@ -104,14 +105,14 @@ export function writeReport(dir) {
   };
   const cells = [...group(runs, (r) => `${r.stack} / ${r.arm}`)].sort(([a], [b]) => rank(a).localeCompare(rank(b)));
   if (cells.length) {
-    const testIds = [...new Map(runs.flatMap((r) => r.hidden.map((h) => [h.id, h.name]))).entries()].sort();
+    const testIds = [...new Map(runs.flatMap((r) => [...r.hidden, ...(r.hidden2 || [])].map((h) => [h.id, h.name]))).entries()].sort();
     lines.push('## Hidden tests: pass rate per cell');
     lines.push('');
     lines.push(`| Test | ${cells.map(([k]) => k).join(' | ')} |`);
     lines.push(`| --- | ${cells.map(() => '---').join(' | ')} |`);
     for (const [id, name] of testIds) {
       const row = cells.map(([, rs]) => {
-        const xs = rs.map((r) => r.hidden.find((h) => h.id === id)).filter(Boolean);
+        const xs = rs.map((r) => [...r.hidden, ...(r.hidden2 || [])].find((h) => h.id === id)).filter(Boolean);
         return xs.length ? `${Math.round((100 * xs.filter((h) => h.pass).length) / xs.length)}%` : '—';
       });
       lines.push(`| ${id} ${name} | ${row.join(' | ')} |`);
@@ -150,9 +151,9 @@ export function writeReport(dir) {
   const file = path.join(dir, 'report.md');
   fs.writeFileSync(file, lines.join('\n'));
 
-  const csv = ['stack,arm,run,calls,prompt_tokens,completion_tokens,total_tokens,tokens_estimated,hidden_passed,hidden_total,stop_reason,built_final,wall_ms,model_ms,build_ms'];
+  const csv = ['stack,arm,run,calls,prompt_tokens,completion_tokens,total_tokens,tokens_estimated,hidden_passed,hidden_total,stop_reason,built_final,wall_ms,model_ms,build_ms,hidden2_passed,hidden2_total'];
   for (const r of runs) {
-    csv.push([r.stack, r.arm, r.run, r.calls, r.promptTokens, r.completionTokens, r.promptTokens + r.completionTokens, r.tokensEstimated, r.hiddenPassed, r.hiddenTotal, r.stopReason, r.builtFinal, r.wallMs, r.modelMs, r.buildMs].join(','));
+    csv.push([r.stack, r.arm, r.run, r.calls, r.promptTokens, r.completionTokens, r.promptTokens + r.completionTokens, r.tokensEstimated, r.hiddenPassed, r.hiddenTotal, r.stopReason, r.builtFinal, r.wallMs, r.modelMs, r.buildMs, r.hidden2Passed ?? '', r.hidden2Total ?? ''].join(','));
   }
   fs.writeFileSync(path.join(dir, 'runs.csv'), csv.join('\n') + '\n');
   return file;

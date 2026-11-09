@@ -56,7 +56,7 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
   const metrics = {
     stack: stack.name, arm, run: runIndex, params,
     calls: 0, promptTokens: 0, completionTokens: 0, promptEstimate: 0, tokensEstimated: false, suspiciousUsageCalls: 0,
-    modelMs: 0, buildMs: 0, attempts: [], stopReason: 'budget', builtFinal: false, hidden: [], startedAt: new Date().toISOString(),
+    modelMs: 0, buildMs: 0, attempts: [], stopReason: 'budget', builtFinal: false, hidden: [], hidden2: [], startedAt: new Date().toISOString(),
   };
   const started = Date.now();
   let feedback = '';
@@ -101,23 +101,29 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
     feedback = formatFeedback({ applied, parsed, app, visible, logs });
   }
 
-  // Final judgement: fresh build, empty database, hidden suite only.
+  // Final judgement: fresh build, empty database, hidden suites only (hidden first, then hidden2).
   const app = await startApp(stack, workspace, appOpts); // throws InfraError
   if (app.ok) {
     metrics.builtFinal = true;
     try {
       await app.psp.reset();
-      metrics.hidden = await judge(app.baseUrl, app.psp, ['hidden']);
+      const results = await judge(app.baseUrl, app.psp, ['hidden', 'hidden2']);
+      metrics.hidden = results.filter((r) => r.suite === 'hidden');
+      metrics.hidden2 = results.filter((r) => r.suite === 'hidden2');
     } finally {
       await app.stop();
     }
   } else {
     metrics.finalBuildError = `${app.phase}: ${app.reason}`;
-    const { tests } = await import('../suites/hidden.mjs');
-    metrics.hidden = tests.map((t) => ({ suite: 'hidden', id: t.id, name: t.name, pass: false, error: 'app did not build or start' }));
+    const { SUITES } = await import('./judge.mjs');
+    const notBuilt = (suite) => SUITES[suite].map((t) => ({ suite, id: t.id, name: t.name, pass: false, error: 'app did not build or start' }));
+    metrics.hidden = notBuilt('hidden');
+    metrics.hidden2 = notBuilt('hidden2');
   }
   metrics.hiddenPassed = metrics.hidden.filter((r) => r.pass).length;
   metrics.hiddenTotal = metrics.hidden.length;
+  metrics.hidden2Passed = metrics.hidden2.filter((r) => r.pass).length;
+  metrics.hidden2Total = metrics.hidden2.length;
   metrics.wallMs = Date.now() - started;
   // Keep the produced code, drop heavy build folders.
   for (const heavy of ['node_modules', '.next', 'vendor', 'target', '.venv', '__pycache__']) fs.rmSync(path.join(workspace, heavy), { recursive: true, force: true });
