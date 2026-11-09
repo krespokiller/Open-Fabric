@@ -30,12 +30,32 @@ function cleanPath(header) {
   return header.trim().replace(/^[`'"]+|[`'"]+$/g, '').split(/\s+/)[0].replace(/[`'"]+$/g, '');
 }
 
+// Small models with longer prompts often write "```FILE path" ... "```" instead of
+// "<<<FILE path" ... ">>>FILE". Treat that variant as the same block so every arm is
+// judged on its code, not on its punctuation. A "```FILE" block closes at the next line
+// that is exactly "```".
+function normalizeFenceBlocks(src) {
+  const lines = src.split('\n');
+  let open = false;
+  for (let i = 0; i < lines.length; i++) {
+    const m = !open && /^```FILE[ \t]+(\S.*)$/.exec(lines[i]);
+    if (m) {
+      lines[i] = `<<<FILE ${m[1]}`;
+      open = true;
+    } else if (open && /^```\s*$/.test(lines[i])) {
+      lines[i] = '>>>FILE';
+      open = false;
+    }
+  }
+  return lines.join('\n');
+}
+
 export function parseAnswer(text) {
   const files = [];
   const deletes = [];
   const malformed = [];
   let truncated = null;
-  const src = String(text || '').replace(/\r\n/g, '\n');
+  const src = normalizeFenceBlocks(String(text || '').replace(/\r\n/g, '\n'));
   const outside = [];
   let pos = 0;
   const header = /<<<FILE[ \t]+([^\n]*)\n/g;
