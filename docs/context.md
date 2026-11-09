@@ -66,8 +66,3 @@ Evidencia de investigación usada:
 - **Propiedad:** definir de quién es el proyecto antes de que tenga tracción.
 - **Primer stack con código listo:** Next.js por defecto; confirmar con los proyectos reales donde se va a usar.
 - **Criterio de éxito del experimento:** propuesto pero no fijado. OpenFabric gana si, en cada stack, `of-spec` pasa más tests ocultos que `tests` y gasta al menos 30% menos tokens por test pasado. Hay que fijarlo antes de correr.
-
-## Documentos de trabajo (privados, en claude.ai)
-
-- [Revisión técnica y manifiesto v2](https://claude.ai/artifact/FWHdgoSpdm8qnoZ6EDmcAi)
-- [Evaluación de la idea: tesis y productos similares](https://claude.ai/artifact/7gNfHFyYtcYqv4G27sRLsn)
