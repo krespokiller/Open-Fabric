@@ -2,14 +2,37 @@
 
 Registro de cómo llegamos aquí, para retomar el trabajo sin repetir discusiones. Lo más nuevo va arriba.
 
-## Estado actual (2026-11-08)
+## Estado actual (2026-11-09)
 
 - **Fase:** validar la tesis antes de construir. Nada del producto está construido.
-- **Experimento:** `bench/` está completo.
-  - Next.js y Django: la implementación de referencia pasa los 33 tests (humo, públicos y ocultos), validada en modo nativo.
-  - Spring Boot y Laravel: escritos y revisados, pero **sin compilar ni correr**.
-  - El modo Docker no se ha probado.
-- **Siguiente paso:** correr `validate-gold` en Docker en una máquina real, luego `selftest`, luego el piloto con un modelo pequeño en Docker Model Runner.
+- **Experimento:** `bench/` listo para correr salvo por la velocidad del modelo.
+  - Los cuatro stacks (Next.js, Django, Spring Boot, Laravel) pasan 59/59 en Docker: humo, públicos y las dos suites ocultas, con 61 cobros al mock de pagos cada uno.
+  - Segunda suite oculta `suites/hidden2.mjs` (26 tests), escrita por un agente que solo leyó `task/task.md` y `suites/lib.mjs`. Se reporta aparte de `hidden`.
+  - Modelo: `hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M` con contexto 32768. `ai/qwen2.5-coder` ya no existe en Docker Hub y el GGUF partido del repo oficial de Qwen no carga en Docker Model Runner.
+  - En CPU (12 núcleos) medimos 18 tokens/s de lectura de prompt y ~2 tokens/s de salida: ~40 minutos por llamada. El piloto necesita la GPU (RTX 2070).
+- **Siguiente paso:** activar la inferencia por GPU, confirmar los criterios de T2 a T4, prueba corta y piloto.
+
+## La visión: de taller a fábrica
+
+Con la máquina de vapor todo se hacía a medida: un eje central movía el taller y cada pieza se limaba hasta que encajaba. Las primeras fábricas eléctricas solo cambiaron la caldera por un motor y casi no ganaron productividad durante décadas (la paradoja del dínamo, Paul David, 1990). La ganancia llegó al rediseñar la fábrica alrededor de piezas intercambiables, y lo que las hizo intercambiables fue el **calibre** "pasa / no pasa".
+
+Hoy la IA es ese motor metido en el taller viejo: escribe cada sistema desde cero y a medida. OpenFabric es la fábrica rediseñada: un catálogo de piezas, un calibre (contrato y tests) que dice si una pieza sirve en cualquier stack, y el agente como ensamblador. La visión cubre **todo** el producto (backend, frontend, datos e infraestructura), cada capa con su propio calibre. Se empieza por el backend porque ahí el calibre es más nítido. Las ilustraciones están en `docs/img/` y en el README.
+
+## Tesis a probar
+
+Cada tesis tiene su criterio escrito **antes** de correrla. Si una corrida no cumple el criterio, se publica igual.
+
+| # | Tesis | Cómo se prueba | Criterio de éxito | Estado |
+| --- | --- | --- | --- | --- |
+| T1 | Con la pieza, un modelo chico llega a software correcto gastando menos | Piloto: `of-spec` contra `tests` | En cada stack, `of-spec` pasa más tests ocultos (`hidden`, media por corrida) que `tests` y gasta al menos 30% menos tokens por test pasado | **Fijado** (2026-11-09) |
+| T2 | Con la pieza sale correcto a la primera | Mismo piloto | En cada stack, `of-spec` tiene más corridas 100% correctas que `tests` | Propuesto, confirmar antes del piloto |
+| T3 | El juez no está sesgado a favor de la pieza | `hidden2` en el mismo piloto | En cada stack, `of-spec` también supera a `tests` en la media de `hidden2` | Propuesto, confirmar antes del piloto |
+| T4 | Funciona en cualquier stack, incluido el legacy | Matriz completa con Spring Boot y Laravel | T1 se cumple también en Spring Boot y Laravel | Propuesto, confirmar antes de la matriz |
+| T5 | Funciona con prompts vagos | Brazo nuevo con la tarea escrita como la diría un cliente | Se fija antes de diseñar el brazo | Pendiente |
+| T6 | Sirve también con modelos grandes | Mismo experimento con un modelo en la nube | Se fija antes de correrlo | Pendiente |
+| T7 | El calibre funciona en frontend | Pieza de UI con tests end-to-end | Se fija antes de escribir la pieza | Pendiente |
+
+Comparación secundaria de T1: `of-spec` contra `docs`.
 
 ## La tesis
 
@@ -65,4 +88,4 @@ Evidencia de investigación usada:
 - **Nombre:** existe la OpenFabrics Alliance. Hay que revisar conflictos antes de lanzar.
 - **Propiedad:** definir de quién es el proyecto antes de que tenga tracción.
 - **Primer stack con código listo:** Next.js por defecto; confirmar con los proyectos reales donde se va a usar.
-- **Criterio de éxito del experimento:** propuesto pero no fijado. OpenFabric gana si, en cada stack, `of-spec` pasa más tests ocultos que `tests` y gasta al menos 30% menos tokens por test pasado. Hay que fijarlo antes de correr.
+- **Criterios de T2 a T7:** ver la tabla de tesis. T1 quedó fijado el 2026-11-09.
