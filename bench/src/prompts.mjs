@@ -61,7 +61,7 @@ export function buildMessages({ stack, arm, workspace, feedback, attempt, budget
     armContext(stack, arm),
     `# Project files\n\nTree:\n${snap.tree}\n\n${snap.contents}`,
     `# Status\n\nThis is attempt ${attempt} of ${budget}.\n\n${feedback || 'This is the first attempt. Nothing has been built yet.'}`,
-    'Write the files now.',
+    'Write the files now. Every file goes in its own <<<FILE relative/path ... >>>FILE block, as described in the output format. Do not write step-by-step explanations or code outside those blocks: only the blocks are applied to the project.',
   ]
     .filter(Boolean)
     .join('\n\n---\n\n');
