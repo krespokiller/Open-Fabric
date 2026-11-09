@@ -5,13 +5,16 @@ import { makeCtx, runSuite } from '../suites/lib.mjs';
 import { tests as smoke } from '../suites/smoke.mjs';
 import { tests as pub } from '../suites/public.mjs';
 import { tests as hidden } from '../suites/hidden.mjs';
+import { tests as hidden2 } from '../suites/hidden2.mjs';
 import { ROOT, sha256File } from './util.mjs';
 import { SECRETS } from './runner.mjs';
 
-export const SUITES = { smoke, public: pub, hidden };
+// hidden is the primary judge. hidden2 was written independently, from task/task.md only,
+// without seeing the piece or hidden.mjs; it is reported as a separate score.
+export const SUITES = { smoke, public: pub, hidden, hidden2 };
 
 export function suiteHashes() {
-  return Object.fromEntries(['lib', 'smoke', 'public', 'hidden'].map((n) => [n, sha256File(path.join(ROOT, 'suites', `${n}.mjs`))]));
+  return Object.fromEntries(['lib', 'smoke', 'public', 'hidden', 'hidden2'].map((n) => [n, sha256File(path.join(ROOT, 'suites', `${n}.mjs`))]));
 }
 
 // One hash over everything that can change results: task, arm contexts, suites, harness and starting projects.

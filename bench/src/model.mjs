@@ -1,6 +1,29 @@
 // Minimal OpenAI-compatible chat client. Works with Docker Model Runner, Ollama, vLLM,
 // LM Studio, llama.cpp server and hosted APIs that expose /chat/completions.
+import http from 'node:http';
+import https from 'node:https';
 import { InfraError, sleep } from './util.mjs';
+
+// POST with an inactivity timeout of timeoutMs. fetch() is not used on purpose: its built-in
+// 300 s headers timeout cuts slow local servers (CPU inference) long before timeoutMs.
+function postJson(url, headers, payload, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const req = (u.protocol === 'https:' ? https : http).request(
+      u,
+      { method: 'POST', headers: { ...headers, 'Content-Length': Buffer.byteLength(payload) } },
+      (res) => {
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => resolve({ status: res.statusCode, ok: res.statusCode >= 200 && res.statusCode < 300, text: Buffer.concat(chunks).toString('utf8') }));
+        res.on('error', reject);
+      },
+    );
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`no response within ${Math.round(timeoutMs / 1000)} s`)));
+    req.on('error', reject);
+    req.end(payload);
+  });
+}
 
 export function estimateTokens(text) {
   return Math.ceil(String(text || '').length / 4);
@@ -20,13 +43,13 @@ export async function chat({ baseUrl, apiKey, model, messages, temperature, maxT
     let res;
     let text;
     try {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}) },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(timeoutMs),
-      });
-      text = await res.text();
+      res = await postJson(
+        url,
+        { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}) },
+        JSON.stringify(body),
+        timeoutMs,
+      );
+      text = res.text;
     } catch (e) {
       lastError = `request failed: ${e.message}`;
       if (attempt < 3) await sleep(5000 * attempt);

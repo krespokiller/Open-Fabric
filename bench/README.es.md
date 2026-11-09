@@ -18,7 +18,7 @@ Todos los brazos reciben la misma tarea ([task/task.md](task/task.md)): un servi
 
 **Regla de parada (igual para todos):** un run termina cuando pasan todos los checks que ese brazo puede ver, o cuando se acaban las llamadas. Por eso los brazos que ven más checks pueden usar más llamadas. **El brazo `tests` es el control:** tiene el mismo feedback y la misma regla de parada que `of-spec`, pero sin la pieza. Así, `of-spec` contra `tests` mide el valor de la pieza y no el de tener tests.
 
-**El juez** es una suite oculta de 21 tests HTTP de caja negra ([suites/hidden.mjs](suites/hidden.mjs)) que ningún modelo ve nunca. Se corre al final de cada run, sobre un arranque limpio con la base de datos vacía. Sus valores son distintos a los de la tarea, la pieza y los tests públicos.
+**El juez** es una suite oculta de 21 tests HTTP de caja negra ([suites/hidden.mjs](suites/hidden.mjs)) que ningún modelo ve nunca. Una segunda suite oculta de 26 tests ([suites/hidden2.mjs](suites/hidden2.mjs)) la escribió un agente que solo leyó la tarea y los helpers de las suites, sin ver la pieza ni la primera suite; su puntaje sale aparte en el reporte y sirve para comprobar que el resultado no depende de quién escribió el juez. Se corre al final de cada run, sobre un arranque limpio con la base de datos vacía. Sus valores son distintos a los de la tarea, la pieza y los tests públicos.
 
 **Stacks:** Next.js 16 + Postgres (el principal, el único con pieza en código), Django 5.2, Spring Boot 3.5 y Laravel 12, todos con PostgreSQL.
 
@@ -26,14 +26,14 @@ Todos los brazos reciben la misma tarea ([task/task.md](task/task.md)): un servi
 
 ## Qué está validado y qué no
 
-| Stack | Implementación de referencia | Validado por mí |
+| Stack | Implementación de referencia | Validación |
 | --- | --- | --- |
-| Next.js | 33/33 tests (humo, públicos y ocultos) | Sí, en modo nativo con Postgres local |
-| Django | 33/33 | Sí, en modo nativo con Postgres local |
-| Spring Boot | escrita y revisada | **No**: aquí no había acceso a Maven Central |
-| Laravel | escrita, revisada y con sintaxis verificada | **No**: aquí no había acceso a Packagist |
+| Next.js | 59/59 tests (humo, públicos y las dos suites ocultas) | Docker (2026-11-09) |
+| Django | 59/59 | Docker (2026-11-09) |
+| Spring Boot | 59/59 | Docker (2026-11-09) |
+| Laravel | 59/59 | Docker (2026-11-09) |
 
-También verifiqué que el juez detecta bugs reales: una carrera de stock (falla H15), una firma sin verificar (H16), un replay que crea otra orden (H09, H10) y un descuento sin tope ni half-even (H05 a H07). Además, una revisión independiente buscó sesgos y bugs, y sus hallazgos ya están corregidos. Lo que **no** pude probar aquí es el modo Docker. Por eso el paso 1 es obligatorio.
+También verifiqué que el juez detecta bugs reales: una carrera de stock (falla H15), una firma sin verificar (H16), un replay que crea otra orden (H09, H10) y un descuento sin tope ni half-even (H05 a H07). Además, una revisión independiente buscó sesgos y bugs, y sus hallazgos ya están corregidos. El modo Docker ya se validó con los cuatro stacks, pero el paso 1 sigue siendo obligatorio en cada máquina nueva.
 
 ## Requisitos
 
@@ -51,7 +51,7 @@ También verifiqué que el juez detecta bugs reales: una carrera de stock (falla
 node src/cli.mjs validate-gold
 ```
 
-Construye cada stack con su implementación de referencia en Docker y corre las tres suites. **Los cuatro stacks deben dar 33/33**, y la línea de cada stack debe mostrar más de 0 `charge requests`. Si Spring o Laravel fallan, el problema está en la referencia o en el Dockerfile, no en los modelos: no corras el experimento en ese stack hasta arreglarlo. Si quieres, me pegas el error y lo corregimos.
+Construye cada stack con su implementación de referencia en Docker y corre las cuatro suites. **Los cuatro stacks deben dar 59/59**, y la línea de cada stack debe mostrar más de 0 `charge requests`. Si Spring o Laravel fallan, el problema está en la referencia o en el Dockerfile, no en los modelos: no corras el experimento en ese stack hasta arreglarlo. Si quieres, me pegas el error y lo corregimos.
 
 ### 2. Probar el harness sin gastar tokens
 
@@ -66,9 +66,13 @@ Usa un modelo falso que devuelve la referencia: el primer intento rompe el build
 En Docker Desktop: Settings → AI → **Enable Docker Model Runner** y **Enable host-side TCP support** (puerto 12434). En Docker Engine, instala `docker-model-plugin`; el TCP viene activo en el 12434.
 
 ```bash
-docker model pull ai/qwen2.5-coder
-docker model configure --context-size 32768 ai/qwen2.5-coder
+docker model pull hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M
+docker model configure --context-size 32768 hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M
 ```
+
+`hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M` ya no está en Docker Hub. Usa un GGUF de **un solo archivo**: los GGUF partidos en varios archivos (como el repo oficial `Qwen/Qwen2.5-Coder-7B-Instruct-GGUF`) fallan al cargar en Docker Model Runner con `invalid split file name`.
+
+En CPU un modelo de 7B es inviable para el piloto: en una máquina de 12 núcleos medimos ~2 tokens/s de salida, unos 40 minutos por llamada. Activa la GPU (Settings → AI → **Enable GPU-backed inference**).
 
 El contexto por defecto de llama.cpp es de 4.096 tokens, y no alcanza: el primer prompt pesa entre 2.400 y 4.300 tokens, y los siguientes incluyen el código que el modelo ya escribió. Usa 16.384 como mínimo; mejor 32.768. Si el contexto se desborda, el harness detiene la corrida y te lo dice, en vez de contarlo como un fallo del modelo. Elige el modelo según tu máquina en [hub.docker.com/u/ai](https://hub.docker.com/u/ai): con 16 GB de RAM, uno de 7B a 8B cuantizado en 4 bits; con más, uno de 14B.
 
@@ -76,7 +80,7 @@ El contexto por defecto de llama.cpp es de 4.096 tokens, y no alcanza: el primer
 
 ```bash
 node src/cli.mjs run \
-  --model ai/qwen2.5-coder \
+  --model hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M \
   --stacks nextjs,django \
   --runs 3 --budget 6 \
   --label "piloto qwen2.5-coder"
@@ -89,7 +93,7 @@ Si el proceso se corta, o si algún run falló por el entorno (el servidor del m
 ### 5. Corrida completa (para publicar)
 
 ```bash
-node src/cli.mjs run --model ai/qwen2.5-coder --runs 5 --budget 8
+node src/cli.mjs run --model hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M --runs 5 --budget 8
 ```
 
 Son 4 stacks y 5 brazos: 17 celdas × 5 runs = 85 runs, uno o dos días de máquina. Para la tesis "un modelo chico con OpenFabric le gana a uno grande sin él", corre además `bare` y `docs` con un modelo grande por API:
@@ -119,7 +123,7 @@ Cada corrida deja en `results/<carpeta>/`:
 ## Limitaciones (dilas tú antes de que te las digan)
 
 - **Es una sola pieza.** Mide el checkout, no el catálogo completo.
-- **El mismo autor escribió la pieza y el juez.** Mitigación: los valores ocultos son distintos, la tarea que reciben todos los brazos describe las mismas reglas y las referencias pasan el 100%. Lo ideal es que otra persona, sin ver la pieza, escriba una segunda suite oculta.
+- **El mismo autor escribió la pieza y la primera suite oculta.** Mitigación: los valores ocultos son distintos, la tarea que reciben todos los brazos describe las mismas reglas, las referencias pasan el 100% y la segunda suite (`hidden2`) la escribió un agente sin ver la pieza. Antes de eso, lo ideal era que otra persona, sin ver la pieza, escribiera una segunda suite oculta.
 - **`of-code` es correcto en parte por construcción:** su código instalado es la misma referencia validada contra el juez. Su resultado mide qué tan bien el modelo monta la pieza y llena el slot, no si la pieza es correcta.
 - **La documentación del brazo `docs` la escogimos nosotros.** Es generosa a propósito (incluye concurrencia en PostgreSQL y redondeo), para que la alternativa compita en su mejor versión. Context7 real podría devolver más o menos.
 - **El agente es mínimo:** cada llamada recibe la tarea, el contexto del brazo, los archivos actuales y el feedback, y el modelo no puede correr comandos. Agentes como Claude Code o Cursor trabajan distinto, así que el resultado aplica a este ciclo, no a todos los agentes.
