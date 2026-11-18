@@ -147,6 +147,19 @@ test('the prompt of an arm that is not a kit arm still shows every project file 
   }
 });
 
+test('the of-code prompt carries the business rules of the piece and not its reference design', () => {
+  const stack = loadStack('nextjs');
+  const dir = fs.mkdtempSync(path.join(tmp, 'nextjs-of-code-'));
+  createWorkspace(stack, dir);
+  const [, user] = buildMessages({ stack, arm: 'of-code', workspace: dir, feedback: '', attempt: 1, budget: 6 }).map((m) => m.content);
+  const piece = fs.readFileSync(path.join(ROOT, 'arms', 'openfabric', 'piece.md'), 'utf8');
+  const rules = piece.slice(piece.indexOf('## 1. '), piece.indexOf('## 2. Reference design')).trim();
+  assert.ok(rules.includes('### 1.1') && rules.includes('### 1.2'), 'the piece still has its two rule sections');
+  assert.ok(user.includes(rules), 'the whole rules section is in the prompt');
+  assert.ok(!user.includes('## 2. Reference design'), 'the reference design is left out');
+  assert.ok(user.includes('## Public tests'), 'the public tests are in the prompt');
+});
+
 test('--slots with a slot no selected stack has is refused before anything is written', () => {
   const out = path.join(tmp, 'out-unknown-slot');
   const r = cli('run', '--model', 'x', '--stacks', 'nextjs,django', '--arms', 'kit-bare,kit-tests', '--slots', 'discount,nope', '--out', out);

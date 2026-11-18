@@ -109,7 +109,8 @@ function armContext(stack, arm) {
   if (arm === 'of-code') {
     // The code is installed, so the agent only needs the rules (for the slot) and the public tests,
     // not the reference design: that is the compact-index idea being measured.
-    const rules = '## 1.' + piece.split('## 1.')[1].split('## 2. Reference design')[0];
+    // Cut by position: splitting on '## 1.' also matches inside '### 1.1' and returned an empty rules section.
+    const rules = piece.slice(piece.indexOf('## 1. '), piece.indexOf('## 2. Reference design'));
     const tests = piece.split('## 3. Public tests')[1] || '';
     return `# OpenFabric piece (installed)\n\nThe verified code of this piece is already installed in the project under lib/of/ (see lib/of/MOUNT.md in the project files). Do not rewrite it. Mount it and fill its slot. Its public tests run after every attempt.\n\n${rules.trim()}\n\n## Public tests${tests}`;
   }
