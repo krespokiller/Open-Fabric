@@ -1,4 +1,3 @@
-import hashlib
 import hmac
 import json
 import logging
@@ -12,8 +11,12 @@ from django.db.models import F, Q, Sum
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
+from .cart import parse_cart
 from .discount import compute_discount
+from .ledger import ledger_entries
 from .models import Customer, IdempotencyKey, LedgerEntry, Order, OrderItem, Product, WebhookEvent
+from .signature import verify_webhook
+from .webhook import decide_webhook
 
 log = logging.getLogger(__name__)
 
@@ -118,21 +121,6 @@ def customers(request):
     return JsonResponse({"id": c.id, "email": c.email, "name": c.name, "api_key": c.api_key}, status=201)
 
 
-def parse_cart(body):
-    items = body.get("items") if isinstance(body, dict) else None
-    if not isinstance(items, list) or not items:
-        return None
-    seen, lines = set(), []
-    for it in items:
-        if not isinstance(it, dict) or not isinstance(it.get("sku"), str) or not is_int(it.get("qty")) or it["qty"] < 1:
-            return None
-        if it["sku"] in seen:
-            return None
-        seen.add(it["sku"])
-        lines.append((it["sku"], it["qty"]))
-    return lines
-
-
 def request_charge(order_id, amount):
     req = urllib.request.Request(
         f"{os.environ.get('PSP_URL', '').rstrip('/')}/charges",
@@ -224,19 +212,13 @@ def order_detail(request, order_id):
                          "discount_minor": o.discount_minor, "total_minor": o.total_minor})
 
 
-def valid_signature(raw, ts, signature):
-    secret = os.environ.get("WEBHOOK_SECRET", "").encode()
-    expected = "sha256=" + hmac.new(secret, ts.encode() + b"." + raw, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature)
-
-
 @require_http_methods(["POST"])
 @api
 def payments_webhook(request):
     raw = request.body
     ts = request.headers.get("X-Timestamp", "")
     signature = request.headers.get("X-Signature", "")
-    if not ts.isdigit() or abs(time.time() - int(ts)) > 300 or not valid_signature(raw, ts, signature):
+    if not verify_webhook(raw, ts, signature, os.environ.get("WEBHOOK_SECRET", ""), time.time()):
         raise ApiError(401, "INVALID_SIGNATURE")
     try:
         event = json.loads(raw)
@@ -255,19 +237,17 @@ def payments_webhook(request):
         order = Order.objects.select_for_update().filter(id=int(event["order_id"])).first()
         if not order:
             raise ApiError(404, "NOT_FOUND")
-        if order.status != "pending":
+        action = decide_webhook(order.status, order.total_minor, event["type"], event.get("amount_minor"))
+        if action == "ignore":
             return JsonResponse({"ok": True, "ignored": True})
-        if event["type"] == "charge.succeeded":
-            if event.get("amount_minor") != order.total_minor:
-                raise ApiError(422, "AMOUNT_MISMATCH")
+        if action == "amount_mismatch":
+            raise ApiError(422, "AMOUNT_MISMATCH")
+        if action == "mark_paid":
             order.status = "paid"
             order.save(update_fields=["status"])
             tx_id = f"order-{order.id}-paid"
-            entries = [LedgerEntry(tx_id=tx_id, account="psp_receivable", side="debit", amount_minor=order.total_minor)]
-            if order.discount_minor > 0:
-                entries.append(LedgerEntry(tx_id=tx_id, account="discounts_given", side="debit", amount_minor=order.discount_minor))
-            entries.append(LedgerEntry(tx_id=tx_id, account="sales", side="credit", amount_minor=order.subtotal_minor))
-            LedgerEntry.objects.bulk_create(entries)
+            entries = ledger_entries(order.subtotal_minor, order.discount_minor, order.total_minor)
+            LedgerEntry.objects.bulk_create([LedgerEntry(tx_id=tx_id, **entry) for entry in entries])
         else:
             order.status = "failed"
             order.save(update_fields=["status"])

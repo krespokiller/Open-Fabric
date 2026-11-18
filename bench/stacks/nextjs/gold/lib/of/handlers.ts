@@ -1,9 +1,11 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
+import { parseCart } from './cart';
 import { pool, ready, tx } from './db';
 import { computeDiscount } from './discount';
 import { HttpError, authenticate, canonical, err, handle, isDigits, json, readJson } from './http';
-
-type Line = { sku: string; qty: number };
+import { ledgerEntries } from './ledger';
+import { verifyWebhook } from './signature';
+import { decideWebhook } from './webhook';
 
 async function requireAdmin(req: Request) {
   const caller = await authenticate(req);
@@ -55,20 +57,6 @@ export const createCustomer = handle(async (req: Request) => {
   );
   return json(rows[0], 201);
 });
-
-function parseCart(body: any): Line[] | null {
-  const items = body?.items;
-  if (!Array.isArray(items) || items.length === 0) return null;
-  const seen = new Set<string>();
-  const lines: Line[] = [];
-  for (const it of items) {
-    if (!it || typeof it.sku !== 'string' || !Number.isInteger(it.qty) || it.qty < 1) return null;
-    if (seen.has(it.sku)) return null;
-    seen.add(it.sku);
-    lines.push({ sku: it.sku, qty: it.qty });
-  }
-  return lines;
-}
 
 export const checkout = handle(async (req: Request) => {
   await ready();
@@ -162,20 +150,12 @@ export const getOrder = handle(async (req: Request, id: string) => {
   return json({ id: o.id, status: o.status, subtotal_minor: o.subtotal_minor, discount_minor: o.discount_minor, total_minor: o.total_minor });
 });
 
-function validSignature(raw: string, ts: string, signature: string): boolean {
-  const secret = process.env.WEBHOOK_SECRET || '';
-  const expected = Buffer.from(`sha256=${createHmac('sha256', secret).update(`${ts}.${raw}`).digest('hex')}`);
-  const given = Buffer.from(signature);
-  return expected.length === given.length && timingSafeEqual(expected, given);
-}
-
 export const paymentsWebhook = handle(async (req: Request) => {
   await ready();
   const raw = await req.text();
   const ts = req.headers.get('x-timestamp') || '';
   const signature = req.headers.get('x-signature') || '';
-  const tsNum = Number(ts);
-  if (!/^\d+$/.test(ts) || Math.abs(Date.now() / 1000 - tsNum) > 300 || !validSignature(raw, ts, signature)) {
+  if (!verifyWebhook(raw, ts, signature, process.env.WEBHOOK_SECRET || '', Date.now() / 1000)) {
     return err(401, 'INVALID_SIGNATURE');
   }
   let event: any;
@@ -195,17 +175,17 @@ export const paymentsWebhook = handle(async (req: Request) => {
     const { rows } = await c.query('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [String(event.order_id)]);
     const order = rows[0];
     if (!order) throw new HttpError(404, 'NOT_FOUND');
-    if (order.status !== 'pending') return json({ ok: true, ignored: true });
+    const action = decideWebhook(order.status, order.total_minor, event.type, event.amount_minor);
+    if (action === 'ignore') return json({ ok: true, ignored: true });
+    if (action === 'amount_mismatch') throw new HttpError(422, 'AMOUNT_MISMATCH');
 
-    if (event.type === 'charge.succeeded') {
-      if (event.amount_minor !== order.total_minor) throw new HttpError(422, 'AMOUNT_MISMATCH');
+    if (action === 'mark_paid') {
       await c.query("UPDATE orders SET status = 'paid' WHERE id = $1", [order.id]);
       const txId = `order-${order.id}-paid`;
-      const entries: [string, string, number][] = [['psp_receivable', 'debit', order.total_minor]];
-      if (order.discount_minor > 0) entries.push(['discounts_given', 'debit', order.discount_minor]);
-      entries.push(['sales', 'credit', order.subtotal_minor]);
-      for (const [account, side, amount] of entries) {
-        await c.query('INSERT INTO ledger_entries (tx_id, account, side, amount_minor) VALUES ($1, $2, $3, $4)', [txId, account, side, amount]);
+      for (const entry of ledgerEntries(order.subtotal_minor, order.discount_minor, order.total_minor)) {
+        await c.query('INSERT INTO ledger_entries (tx_id, account, side, amount_minor) VALUES ($1, $2, $3, $4)', [
+          txId, entry.account, entry.side, entry.amount_minor,
+        ]);
       }
     } else {
       await c.query("UPDATE orders SET status = 'failed' WHERE id = $1", [order.id]);
