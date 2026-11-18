@@ -454,3 +454,168 @@ describe('analyze with first-attempt and per-attempt results', () => {
     assert.match(help.out, /--attempts/);
   });
 });
+
+describe('analyze --outcome decision-right', () => {
+  const classesFile = fileURLToPath(new URL('./fixtures/runs-classes-synthetic.csv', import.meta.url));
+  const classesCsv = readFileSync(classesFile, 'utf8').replaceAll('\r\n', '\n');
+  const compare = ['--treatment', 'kit-tests', '--control', 'kit-bare'];
+  const section = (text, heading) => {
+    const start = text.indexOf(`### ${heading}\n`);
+    if (start < 0) return null;
+    const rest = text.slice(start + 4);
+    const end = rest.search(/\n#{2,3} /);
+    return end < 0 ? rest : rest.slice(0, end);
+  };
+  async function runWith(args, stdin) {
+    let out = '';
+    let err = '';
+    const code = await main(args, { write: (text) => { out += text; }, writeError: (text) => { err += text; }, stdin });
+    return { code, out, err };
+  }
+  const wilsonText = (x, n) => {
+    const w = S.wilson(x, n);
+    return `${(100 * w.lower).toFixed(1)}% to ${(100 * w.upper).toFixed(1)}%`;
+  };
+
+  // 2 stacks x 2 slots x 2 arms x 3 runs. kit-tests: gauge fails, hidden 20 of 21 (known failure).
+  // kit-bare: gauge passes, hidden 20 of 21 (silent defect).
+  function twoStackCsv() {
+    const lines = ['stack,arm,slot,run,total_tokens,hidden_passed,hidden_total,gauge_pass'];
+    for (const stack of ['django', 'nextjs']) {
+      for (const slot of ['cart', 'ledger']) {
+        for (let i = 1; i <= 3; i++) {
+          lines.push([stack, `kit-tests.${slot}`, slot, i, 150, 20, 21, 0].join(','));
+          lines.push([stack, `kit-bare.${slot}`, slot, i, 150, 20, 21, 1].join(','));
+        }
+      }
+    }
+    return lines.join('\n');
+  }
+
+  test('D1: the strata table counts right decisions, with its own labels, and the correct counts stay for the default', async () => {
+    // Fixture, by hand. Right decisions: kit-tests cart 3 of 4, ledger 3 of 4; kit-bare cart 2 of 4, ledger 1 of 4;
+    // pooled 6 of 8 against 3 of 8, +37.5 points.
+    // Correct runs, the default: kit-tests cart 3 of 4, ledger 2 of 4; kit-bare cart 1 of 4, ledger 2 of 4; pooled 5 of 8 against 3 of 8.
+    const right = await runWith(['analyze', classesFile, ...compare, '--outcome', 'decision-right']);
+    assert.equal(right.code, 0, right.err);
+    assert.doesNotMatch(right.out, NEVER);
+    const strata = section(right.out, 'kit-tests against kit-bare');
+    assert.match(strata, /Outcome: the decision is right/);
+    assert.match(strata, /\| Stratum \| Right decision, kit-tests \| Right decision, kit-bare \|/);
+    assert.doesNotMatch(strata, /Correct, kit/);
+    assert.deepEqual(row(strata, 'slot cart')[0].slice(1, 4), ['3 of 4', '2 of 4', '+25.0']);
+    assert.deepEqual(row(strata, 'slot ledger')[0].slice(1, 4), ['3 of 4', '1 of 4', '+50.0']);
+    assert.deepEqual(row(strata, 'pooled')[0].slice(1, 4), ['6 of 8', '3 of 8', '+37.5']);
+    // Exact test by hand: cart has 5 right decisions among 8 runs, ledger 4. P(T_cart = 2, 3, 4) = 24, 24, 4 of 56; P(T_ledger = 2, 3, 4) = 36, 16, 1 of 70.
+    // Observed T = 3 + 3 = 6. P(T >= 6) = (24 * 1 + 24 * 16 + 24 * 1 + 4 * 36 + 4 * 16 + 4 * 1) / (56 * 70) = 644 / 3920 = 0.1643.
+    const cells = S.decisionRightCells(S.readRuns(classesCsv), 'kit-tests', 'kit-bare');
+    assert.ok(Math.abs(S.exactCmh(cells).pUpper - 644 / 3920) < 1e-12);
+    assert.match(strata, /one-sided p = 0\.1643/);
+
+    const byDefault = await runWith(['analyze', classesFile, ...compare]);
+    const defaultStrata = section(byDefault.out, 'kit-tests against kit-bare');
+    assert.match(defaultStrata, /\| Stratum \| Correct, kit-tests \| Correct, kit-bare \|/);
+    assert.doesNotMatch(defaultStrata, /Outcome: the decision is right/);
+    assert.deepEqual(row(defaultStrata, 'slot cart')[0].slice(1, 4), ['3 of 4', '1 of 4', '+50.0']);
+    assert.deepEqual(row(defaultStrata, 'slot ledger')[0].slice(1, 3), ['2 of 4', '2 of 4']);
+    assert.deepEqual(row(defaultStrata, 'pooled')[0].slice(1, 3), ['5 of 8', '3 of 8']);
+    // The sections about correctness by definition do not move with the option.
+    for (const heading of ['Correct runs', 'Tokens and cost per correct run', 'Hidden pass fraction (secondary, no verdict)', 'Gauge against judge']) {
+      assert.equal(section(right.out, heading), section(byDefault.out, heading), heading);
+    }
+  });
+
+  test('D2: the Run classes table, per arm, with the right-decision rate and its Wilson interval, also with the default outcome', async () => {
+    // kit-tests: 4 delivered correct, 2 known failures, 1 silent defect, 1 false rejection; right 6 of 8.
+    // kit-bare:  2 delivered correct, 1 known failure, 4 silent defects, 1 false rejection; right 3 of 8.
+    for (const extra of [[], ['--outcome', 'decision-right']]) {
+      const { code, out, err } = await runWith(['analyze', classesFile, ...compare, ...extra]);
+      assert.equal(code, 0, err);
+      const classes = section(out, 'Run classes');
+      assert.match(classes, /\| Arm \| Delivered correct \| Known failure \| Silent defect \| False rejection \| Unclassified \| Runs \| Right decisions \| Right-decision rate \| 95% Wilson \|/);
+      assert.deepEqual(row(classes, 'kit-tests')[0].slice(1), ['4', '2', '1', '1', '0', '8', '6', '75.0%', wilsonText(6, 8)]);
+      assert.deepEqual(row(classes, 'kit-bare')[0].slice(1), ['2', '1', '4', '1', '0', '8', '3', '37.5%', wilsonText(3, 8)]);
+      assert.equal(section(out, 'Run classes per stack'), null, 'one stack: no per-stack table');
+    }
+  });
+
+  test('D2: per arm and stack when there are several stacks', async () => {
+    const { out } = await runWith(['analyze', '-', ...compare, '--outcome', 'decision-right'], twoStackCsv());
+    const perStack = section(out, 'Run classes per stack');
+    assert.match(perStack, /\| Arm \| Stack \| Delivered correct/);
+    // kit-tests: every run is a known failure in both stacks; kit-bare: every run a silent defect.
+    assert.deepEqual(row(perStack, 'kit-tests')[0].slice(1, 9), ['django', '0', '6', '0', '0', '0', '6', '6']);
+    assert.deepEqual(row(perStack, 'kit-bare')[1].slice(1, 9), ['nextjs', '0', '0', '6', '0', '0', '6', '0']);
+  });
+
+  test('D2: the table is not printed with the default outcome when a run has no gauge result, nor for a file without gauge_pass', async () => {
+    const gap = classesCsv.replace('kit-bare.cart,cart,1,150,21,21,1', 'kit-bare.cart,cart,1,150,21,21,');
+    const partial = await runWith(['analyze', '-', ...compare], gap);
+    assert.equal(partial.code, 0, partial.err);
+    assert.equal(section(partial.out, 'Run classes'), null);
+    const old = await runWith(['analyze', e03]);
+    assert.equal(section(old.out, 'Run classes'), null);
+  });
+
+  test('D3: a compared run with no gauge result refuses the comparison and names the count', async () => {
+    const gap = classesCsv.replace('kit-bare.cart,cart,1,150,21,21,1', 'kit-bare.cart,cart,1,150,21,21,').replace('kit-tests.cart,cart,3,300,19,21,0', 'kit-tests.cart,cart,3,300,19,21,');
+    const { code, out, err } = await runWith(['analyze', '-', ...compare, '--outcome', 'decision-right'], gap);
+    assert.equal(code, 1);
+    assert.equal(out, '');
+    assert.match(err, /2 of 16 runs of kit-tests and kit-bare have no gauge result \(gauge_pass\)/);
+    assert.match(err, /decision-right/);
+    const noGauge = await runWith(['analyze', e03, '--treatment', 'tests', '--control', 'bare', '--outcome', 'decision-right']);
+    assert.equal(noGauge.code, 1);
+    assert.match(noGauge.err, /\d+ of \d+ runs of tests and bare have no gauge result/);
+  });
+
+  test('D3: runs of other arms with no gauge result go in the Unclassified column and do not stop the comparison', async () => {
+    const withOther = `${classesCsv.trimEnd()}\nnextjs,other.cart,cart,1,100,21,21,\nnextjs,other.cart,cart,2,100,21,21,1\n`;
+    const { code, out, err } = await runWith(['analyze', '-', ...compare, '--outcome', 'decision-right'], withOther);
+    assert.equal(code, 0, err);
+    const classes = section(out, 'Run classes');
+    // other: one delivered correct, one unclassified; the rate is over the 1 classified run.
+    assert.deepEqual(row(classes, 'other')[0].slice(1), ['1', '0', '0', '0', '1', '2', '1', '100.0%', wilsonText(1, 1)]);
+    assert.deepEqual(row(section(out, 'kit-tests against kit-bare'), 'pooled')[0].slice(1, 3), ['6 of 8', '3 of 8']);
+  });
+
+  test('D5: the decision rule gives its verdict on the new outcome, named, where the default outcome has none', async () => {
+    // 2 stacks x 2 slots x 3 runs per arm. kit-tests: gauge fails and the run is wrong (known failure), a right decision, 12 of 12.
+    // kit-bare: gauge passes and the run is wrong (silent defect), a wrong decision, 0 of 12. Every stratum favours kit-tests.
+    // Per stratum P(T = 3) = 1 / C(6, 3) = 0.05; over 4 strata p = 0.05^4 = 6.25e-6, below the 0.025 of one look.
+    const rule = ['--d-star', '50', '--looks', '3', '--delta', '0.3', '--stacks', 'django,nextjs', '--slots', 'cart,ledger'];
+    const right = await runWith(['analyze', '-', ...compare, '--outcome', 'decision-right', ...rule], twoStackCsv());
+    assert.equal(right.code, 0, right.err);
+    assert.match(right.out, /\*\*Verdict for the outcome decision-right: supported\.\*\*/);
+    assert.deepEqual(row(right.out, 'pooled')[0].slice(1, 3), ['12 of 12', '0 of 12']);
+    assert.match(right.out, /one-sided p = 6\.[23]e-6/);
+    assert.match(right.out, /Positive in every stack: yes/);
+    const byDefault = await runWith(['analyze', '-', ...compare, ...rule], twoStackCsv());
+    assert.match(byDefault.out, /\*\*Verdict: undecidable\.\*\* Cause: floor: every run failed/);
+    // A floor on this outcome speaks of decisions, not runs: every run a silent defect.
+    const allWrong = twoStackCsv().replaceAll(',0\n', ',1\n');
+    const floor = await runWith(['analyze', '-', ...compare, '--outcome', 'decision-right', ...rule], allWrong);
+    assert.match(floor.out, /Verdict for the outcome decision-right: undecidable\.\*\* Cause: floor: every decision was wrong/);
+  });
+
+  test('the default outcome leaves a file without gauge_pass identical to naming it, and prints no new section', async () => {
+    for (const args of [['analyze', e01], ['analyze', e03, '--treatment', 'tests', '--control', 'bare']]) {
+      const plain = await runWith(args);
+      const named = await runWith([...args, '--outcome', 'correct']);
+      assert.equal(plain.code, 0, plain.err);
+      assert.equal(named.out, plain.out);
+      assert.doesNotMatch(plain.out, /Run classes|Right decision|decision-right|Outcome:/);
+    }
+  });
+
+  test('--outcome takes correct or decision-right, needs a comparison, and the help lists it', async () => {
+    const bad = await runWith(['analyze', classesFile, ...compare, '--outcome', 'gauge']);
+    assert.equal(bad.code, 1);
+    assert.match(bad.err, /--outcome must be correct or decision-right, got "gauge"/);
+    const alone = await runWith(['analyze', classesFile, '--outcome', 'decision-right']);
+    assert.equal(alone.code, 1);
+    assert.match(alone.err, /--outcome decision-right needs --treatment and --control/);
+    const help = await runWith(['help']);
+    assert.match(help.out, /--outcome correct\|decision-right/);
+  });
+});

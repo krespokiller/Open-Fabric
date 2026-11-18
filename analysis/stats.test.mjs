@@ -1481,3 +1481,61 @@ describe('firstAttemptCells (A4)', () => {
     assert.notEqual(S.firstAttemptCells(otherArm, 'kit-tests', 'kit-bare'), null);
   });
 });
+
+describe('run classes and the outcome "the decision is right" (D4)', () => {
+  const runs = S.readRuns(readFixture('runs-classes-synthetic.csv'));
+  const only = (arm) => runs.filter((r) => r.arm === arm);
+
+  test('runClass: the four classes, and null without a gauge result', () => {
+    assert.equal(S.runClass({ gaugePass: true, correct: true }), 'delivered_correct');
+    assert.equal(S.runClass({ gaugePass: false, correct: false }), 'known_failure');
+    assert.equal(S.runClass({ gaugePass: true, correct: false }), 'silent_defect');
+    assert.equal(S.runClass({ gaugePass: false, correct: true }), 'false_rejection');
+    assert.equal(S.runClass({ gaugePass: null, correct: true }), null);
+    assert.equal(S.runClass({ gaugePass: null, correct: false }), null);
+  });
+
+  test('classCounts: all four classes present, counted by hand from the fixture', () => {
+    // kit-tests: cart DC, DC, KF, FR; ledger DC, DC, SD, KF -> DC 4, KF 2, SD 1, FR 1; right = 4 + 2 = 6 of 8.
+    // kit-bare:  cart DC, SD, SD, KF; ledger SD, SD, DC, FR -> DC 2, KF 1, SD 4, FR 1; right = 2 + 1 = 3 of 8.
+    const tests = S.classCounts(only('kit-tests'));
+    assert.deepEqual([tests.delivered_correct, tests.known_failure, tests.silent_defect, tests.false_rejection, tests.unclassified], [4, 2, 1, 1, 0]);
+    assert.deepEqual([tests.n, tests.classified, tests.right], [8, 8, 6]);
+    assert.equal(tests.rate.estimate, 0.75);
+    assert.deepEqual(tests.rate.wilson, S.wilson(6, 8));
+    const bare = S.classCounts(only('kit-bare'));
+    assert.deepEqual([bare.delivered_correct, bare.known_failure, bare.silent_defect, bare.false_rejection, bare.unclassified], [2, 1, 4, 1, 0]);
+    assert.deepEqual([bare.n, bare.classified, bare.right], [8, 8, 3]);
+    assert.deepEqual(bare.rate.wilson, S.wilson(3, 8));
+  });
+
+  test('classCounts: a run with no gauge result is unclassified, never a class and never in the rate', () => {
+    const withGap = [...only('kit-tests'), { arm: 'kit-tests', stack: 'nextjs', slot: 'cart', correct: true, gaugePass: null }];
+    const counts = S.classCounts(withGap);
+    assert.equal(counts.unclassified, 1);
+    assert.deepEqual([counts.n, counts.classified, counts.right], [9, 8, 6]);
+    const none = S.classCounts([{ arm: 'a', correct: true, gaugePass: null }]);
+    assert.equal(none.rate.estimable, false);
+  });
+
+  test('decisionRightCells: the strata of the outcome, different from the correct counts', () => {
+    // Right decisions (DC or KF), kit-tests: cart 3 of 4 (the false rejection is wrong), ledger 3 of 4 (the silent defect is wrong).
+    // kit-bare: cart 2 of 4 (DC and KF), ledger 1 of 4 (only the DC).
+    assert.deepEqual(S.decisionRightCells(runs, 'kit-tests', 'kit-bare'), [
+      { stack: 'nextjs', slot: 'cart', xT: 3, nT: 4, xC: 2, nC: 4 },
+      { stack: 'nextjs', slot: 'ledger', xT: 3, nT: 4, xC: 1, nC: 4 },
+    ]);
+    // Correct runs, same runs: kit-tests cart 3 (DC, DC, FR), ledger 2; kit-bare cart 1, ledger 2 (DC, FR).
+    assert.deepEqual(S.cellsFromRuns(runs, 'kit-tests', 'kit-bare'), [
+      { stack: 'nextjs', slot: 'cart', xT: 3, nT: 4, xC: 1, nC: 4 },
+      { stack: 'nextjs', slot: 'ledger', xT: 2, nT: 4, xC: 2, nC: 4 },
+    ]);
+  });
+
+  test('decisionRightCells: null when a run of either compared arm has no gauge result; other arms do not matter', () => {
+    const partial = runs.map((r, i) => (i === 0 ? { ...r, gaugePass: null } : r));
+    assert.equal(S.decisionRightCells(partial, 'kit-tests', 'kit-bare'), null);
+    const otherArm = [...runs, { arm: 'bare', stack: 'nextjs', slot: null, correct: false, gaugePass: null }];
+    assert.notEqual(S.decisionRightCells(otherArm, 'kit-tests', 'kit-bare'), null);
+  });
+});

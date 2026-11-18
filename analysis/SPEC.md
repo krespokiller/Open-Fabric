@@ -59,6 +59,14 @@
 - "At least half" needs a Clopper-Pearson lower limit of 0.5 (9 of 10).
 - The loop stops when the gauge passes, so final-state tables support only false confidence; sensitivity and specificity need per-attempt gauge and judge results, bootstrapped by run. Per-attempt tables are now computed from `attempts.csv` (`attemptGaugeTable`), with percentile bootstrap intervals that resample whole runs.
 
+### 6.1 The decision is right
+- Second outcome of a run, besides `correct` (the run passes every test of both hidden suites). At the end of a run the gauge says pass or no pass (`gauge_pass`); the decision is right when it agrees with the hidden judge: `gauge_pass == correct`.
+- Four classes: delivered correct (gauge 1, correct 1, right), known failure (0, 0, right), silent defect (1, 0, wrong), false rejection (0, 1, wrong).
+- A run with no gauge result has no class. The comparison on this outcome is refused if any run of the two arms has none; in the class table such runs are `Unclassified` and out of the rate. Never counted as right or wrong.
+- Same machinery as the primary rule: x_ah counts right decisions instead of correct runs, and the strata, the exact CMH test, the Newcombe limits, the looks, d*, the thresholds and the verdict are those of section 2, unchanged. The verdict names the outcome. Only `--outcome decision-right` selects it; the default stays `correct`.
+- Per arm, and per arm and stack: the counts of the four classes and the right-decision rate with its Wilson interval (descriptive, no verdict of its own).
+- An always-failing gauge (`gauge_pass = 0` in every run) scores a right-decision rate of 1 minus the correct rate. The outcome must be read next to the correct rate, never alone.
+
 ## 7 Model of the claim
 - Cost: log(CPC_W/CPC_L)=log(c_W/c_L)+log(p_L/p_W), structural plus retry (W workshop, L line). Prediction: the retry term shrinks with stronger models, the structural term stays (E05).
 - Product law: P(correct | open slots S)=gamma^(|S|-1) x product of q_j. Prediction: R=P_all/product of q_j is 1; interval on add-half logs (E04 gives q_j, E08 P_all).
@@ -78,6 +86,9 @@
 - `readAttempts(csv)`: attempts with stack, arm, slot, run, attempt, built, gaugePass, judgeCorrect, tokens
 - `attemptGaugeTable(attempts,{seed,resamples})`: per-attempt cells, three rates with bootstrap-by-run intervals, unjudged count
 - `firstAttemptCells(runs,t,c)`: cells with every run scored at its first attempt, or null when a run has no result
+- `runClass(run)`: delivered_correct, known_failure, silent_defect, false_rejection, or null without a gauge result
+- `classCounts(runs)`: counts of the four classes and unclassified, right decisions, rate with Wilson interval
+- `decisionRightCells(runs,t,c)`: cells counting right decisions (the helper shared with `cellsFromRuns` and `firstAttemptCells`), or null when a run of either arm has no gauge result
 - `posteriorDifference(cells,dStar)`: P(D>0), P(D>=d*)
 - `productLaw(q,xAll,nAll)`: R with interval
 - `gaugeLoop(pi,se,sp,budget)`: gauge pass rate, false confidence, attempts
@@ -106,6 +117,7 @@ Note: this table is from the 40,000-replicate run above. `README.md` is the curr
 - `method.md` changes: the verdict rules and the 97/43/24/15 table (exact Fisher needs 102/49/29/18).
 
 ## 10 Must not be claimed
+- A right-decision rate read alone: an always-failing gauge scores 1 minus the correct rate.
 - That `supported` means D>=d*.
 - 20 points at 80% power within 200 runs.
 - A cost ratio or upper cost bound against an arm with zero correct runs.

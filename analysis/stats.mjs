@@ -486,6 +486,43 @@ export function firstAttemptCells(runs, treatmentArm, controlArm) {
   return countCells(runs, treatmentArm, controlArm, (run) => run.firstCorrect);
 }
 
+// ---------------------------------------------------------------- the decision is right
+
+// The four classes of a run, from the gauge result at the end of the run and the hidden judge. The decision
+// is right when the gauge agrees with the judge: gaugePass === correct. null when the run has no gauge result.
+export const RUN_CLASSES = ['delivered_correct', 'known_failure', 'silent_defect', 'false_rejection'];
+
+export function runClass(run) {
+  if (run.gaugePass !== true && run.gaugePass !== false) return null;
+  if (run.gaugePass) return run.correct ? 'delivered_correct' : 'silent_defect';
+  return run.correct ? 'false_rejection' : 'known_failure';
+}
+
+const isRight = (run) => {
+  const cls = runClass(run);
+  return cls === 'delivered_correct' || cls === 'known_failure';
+};
+
+// The runs of one group counted by class, with the right-decision rate over the classified runs and its
+// Wilson interval. A run with no gauge result is counted in `unclassified`, never as right or wrong.
+export function classCounts(runs) {
+  const counts = { delivered_correct: 0, known_failure: 0, silent_defect: 0, false_rejection: 0, unclassified: 0 };
+  for (const run of runs) {
+    const cls = runClass(run);
+    counts[cls === null ? 'unclassified' : cls]++;
+  }
+  const classified = runs.length - counts.unclassified;
+  const right = counts.delivered_correct + counts.known_failure;
+  return { ...counts, n: runs.length, classified, right, rate: rate(right, classified) };
+}
+
+// Counts of right decisions per stratum for the two arms being compared, the same cells as cellsFromRuns.
+// null, "not available", when a run of either arm has no gauge result: it is never counted as right or wrong.
+export function decisionRightCells(runs, treatmentArm, controlArm) {
+  if (runs.some((run) => (run.arm === treatmentArm || run.arm === controlArm) && runClass(run) === null)) return null;
+  return countCells(runs, treatmentArm, controlArm, isRight);
+}
+
 // Per stack, per slot and pooled, each with its Newcombe interval. A slot whose observed
 // difference goes against the pooled one is flagged; the flag is information, never a gate.
 export function summarizeCells(cells, { z = Z95, pooledZ = z, stacks, slots } = {}) {

@@ -17,6 +17,11 @@ Commands
                    --d-star POINTS --looks M[,M]   one plan instead of the default six
   analyze FILE...  Analyze one or more runs.csv ("-" reads standard input).
                    --treatment ARM --control ARM   compare two arms
+                   --outcome correct|decision-right   what a run counts for in the comparison (default correct):
+                                   correct = the run passes every hidden test; decision-right = the gauge result
+                                   agrees with the hidden judge (gauge_pass equals correct). The decision rule,
+                                   the exact test and the tables of the comparison use it; a run with no gauge
+                                   result refuses the comparison. Needs --treatment and --control.
                    --d-star POINTS --looks M[,M] --delta X | --z-r Z[,Z]   apply the decision rule
                    --stacks A,B --slots X,Y,Z   the planned design: a planned stratum with no runs makes the
                                    verdict undecidable (use --slots all for a file with no slot column)
@@ -38,7 +43,7 @@ Commands
 const OPTIONS = {
   sizes: [],
   design: ['reps', 'seed', 'stacks', 'slots', 'step', 'd-star', 'looks'],
-  analyze: ['treatment', 'control', 'd-star', 'looks', 'delta', 'z-r', 'look', 'hash', 'plan-hash', 'stacks', 'slots', 'seed', 'resamples', 'attempts'],
+  analyze: ['treatment', 'control', 'd-star', 'looks', 'delta', 'z-r', 'look', 'hash', 'plan-hash', 'stacks', 'slots', 'seed', 'resamples', 'attempts', 'outcome'],
   coverage: ['sizes'],
   'cost-coverage': ['reps', 'resamples', 'seed'],
   'product-law': ['reps', 'seed'],
@@ -154,11 +159,13 @@ function firstAttemptOf(runs, treatment, control) {
 }
 
 // Everything the report of one set of runs needs, as plain data.
-//   options: { seed, resamples, treatment, control, dStar, plan, look, hash, attempts }
+//   options: { seed, resamples, treatment, control, dStar, plan, look, hash, attempts, outcome }
+//   outcome: 'correct' (default) or 'decision-right', what a run counts for in the comparison.
 //   attempts: the rows of an attempts.csv (S.readAttempts), for the gauge against the judge per attempt.
 export function analyzeRuns(runs, options = {}) {
   const seed = options.seed ?? DEFAULT_SEED;
   const resamples = options.resamples ?? 10000;
+  const outcome = options.outcome ?? 'correct';
   const arms = unique(runs.map((r) => r.arm));
   const stacks = unique(runs.map((r) => r.stack));
   const slots = unique(runs.map((r) => r.slot).filter((slot) => slot !== null));
@@ -181,6 +188,7 @@ export function analyzeRuns(runs, options = {}) {
     judgeDisagreements: runs.filter((r) => r.judgeAgrees === false).length,
     attemptGauge: options.attempts ? S.attemptGaugeTables(options.attempts, { seed, resamples }) : null,
     attemptSettings: { seed, resamples },
+    runClasses: null,
     comparison: null,
   };
   for (const arm of arms) {
@@ -192,12 +200,34 @@ export function analyzeRuns(runs, options = {}) {
     }
   }
 
+  // The four classes are descriptive: shown with the new outcome, and with the default one when every run has a gauge result.
+  if (runs.length > 0 && (outcome === 'decision-right' || runs.every((r) => r.gaugePass !== null))) {
+    report.runClasses = { perArm: [], perStack: [] };
+    for (const arm of arms) {
+      report.runClasses.perArm.push({ arm, ...S.classCounts(runs.filter((r) => r.arm === arm)) });
+      for (const stack of stacks) {
+        const subset = runs.filter((r) => r.arm === arm && r.stack === stack);
+        if (subset.length > 0) report.runClasses.perStack.push({ arm, stack, ...S.classCounts(subset) });
+      }
+    }
+  }
+
   const { treatment, control } = options;
   if (treatment !== undefined || control !== undefined) {
     for (const [role, arm] of [['treatment', treatment], ['control', control]]) {
       if (!arms.includes(arm)) throw new UsageError(`the ${role} arm "${arm}" is not in the runs; arms: ${arms.join(', ')}`);
     }
-    const cells = S.cellsFromRuns(runs, treatment, control);
+    let cells;
+    if (outcome === 'decision-right') {
+      cells = S.decisionRightCells(runs, treatment, control);
+      if (cells === null) {
+        const compared = runs.filter((r) => r.arm === treatment || r.arm === control);
+        const missing = compared.filter((r) => S.runClass(r) === null).length;
+        throw new UsageError(`--outcome decision-right needs a gauge result for every run of the two arms: ${missing} of ${compared.length} runs of ${treatment} and ${control} have no gauge result (gauge_pass), so they cannot be classified; they are never counted as right or wrong`);
+      }
+    } else {
+      cells = S.cellsFromRuns(runs, treatment, control);
+    }
     const plan = options.plan ?? null;
     const dStar = plan?.dStar ?? options.dStar ?? null;
     let decision = null;
@@ -215,6 +245,7 @@ export function analyzeRuns(runs, options = {}) {
     report.comparison = {
       treatment,
       control,
+      outcome,
       dStar,
       cells,
       perStack: summary.perStack,
@@ -240,8 +271,16 @@ function costCell(cost) {
   return `${whole(cost.estimate)} (limits ${whole(cost.lower)} to ${whole(cost.upper)})`;
 }
 
+// The causes of step 2 of the rule speak of runs; on the outcome decision-right they speak of decisions.
+function causeText(cause, right) {
+  if (!right) return cause;
+  return cause.replace('floor: every run failed', 'floor: every decision was wrong').replace('ceiling: every run passed', 'ceiling: every decision was right');
+}
+
 function renderComparison(c) {
   const out = [];
+  const right = c.outcome === 'decision-right';
+  const counted = right ? 'Right decision' : 'Correct';
   const counts = (x, n) => `${x} of ${n}`;
   const rowOf = (label, r, note = '') => [label, counts(r.xT, r.nT), counts(r.xC, r.nC), r.difference === null ? 'not estimable' : points(r.difference), r.difference === null ? 'not estimable' : `${range(r.interval, points)}${note}`];
   const rows = [];
@@ -250,11 +289,12 @@ function renderComparison(c) {
   const z = c.pooled.intervalZ;
   rows.push(rowOf('pooled', c.pooled, Math.abs(z - S.Z95) > 1e-9 ? ` (z_R = ${z.toFixed(2)})` : ''));
   out.push(`### ${c.treatment} against ${c.control}`, '');
-  out.push(table(['Stratum', `Correct, ${c.treatment}`, `Correct, ${c.control}`, 'Difference (points)', 'Newcombe interval (points)'], rows), '');
+  if (right) out.push('Outcome: the decision is right. A run counts when its gauge result agrees with the hidden judge (gauge_pass equals correct): delivered correct or known failure. Silent defects and false rejections do not count.', '');
+  out.push(table(['Stratum', `${counted}, ${c.treatment}`, `${counted}, ${c.control}`, 'Difference (points)', 'Newcombe interval (points)'], rows), '');
   out.push('Stack and slot rows use 95% intervals. A slot against the pooled direction is a flag, never a gate.', '');
 
-  if (c.edge === 'floor') out.push('- Every run failed in both arms (floor): no difference can be read from these runs.');
-  if (c.edge === 'ceiling') out.push('- Every run passed in both arms (ceiling): no difference can be read from these runs.');
+  if (c.edge === 'floor') out.push(right ? '- Every decision was wrong in both arms (floor): no difference can be read from these runs.' : '- Every run failed in both arms (floor): no difference can be read from these runs.');
+  if (c.edge === 'ceiling') out.push(right ? '- Every decision was right in both arms (ceiling): no difference can be read from these runs.' : '- Every run passed in both arms (ceiling): no difference can be read from these runs.');
   out.push(`- Exact stratified test (Cochran-Mantel-Haenszel, ${c.test.informativeStrata} informative strata of ${c.cells.length}): one-sided p = ${pValue(c.test.pUpper)}, two-sided p = ${pValue(c.test.pTwoSided)}.`);
   const flagged = c.contrasts.pairs.filter((pair) => pair.flagged);
   if (c.contrasts.pairs.length === 0) out.push('- Interaction between stacks: not applicable with fewer than two stacks.');
@@ -283,7 +323,7 @@ function renderComparison(c) {
   if (!d) {
     out.push('No verdict: a verdict needs the preregistered plan (--d-star, --looks, and --delta or --z-r).');
   } else {
-    out.push(`**Verdict: ${d.verdict}.** ${d.cause ? `Cause: ${d.cause}.` : 'No boundary crossed at this look; the plan continues.'}`);
+    out.push(`**${right ? `Verdict for the outcome ${c.outcome}` : 'Verdict'}: ${d.verdict}.** ${d.cause ? `Cause: ${causeText(d.cause, right)}.` : 'No boundary crossed at this look; the plan continues.'}`);
     if (!c.designPlanned) out.push('', 'The incomplete-block check was not applied: no planned design was given (--stacks and --slots), so a stack or slot with no runs is not detected.');
     const st = d.statistics;
     if (st) {
@@ -294,6 +334,21 @@ function renderComparison(c) {
       if (d.verdict === 'supported') out.push('`supported` means the difference is above 0 and d* is not excluded. It does not mean the difference is at least d*.');
     }
   }
+  return out.join('\n');
+}
+
+// Descriptive: the four classes of a run, from the gauge result and the hidden judge, per arm and per arm and stack.
+function renderRunClasses(runClasses, stacks) {
+  const out = [];
+  const counts = (r) => [r.delivered_correct, r.known_failure, r.silent_defect, r.false_rejection, r.unclassified, r.n, r.right, r.rate.estimable ? percent(r.rate.estimate) : 'not estimable', r.rate.estimable ? range(r.rate.wilson) : 'not estimable'];
+  const heads = ['Delivered correct', 'Known failure', 'Silent defect', 'False rejection', 'Unclassified', 'Runs', 'Right decisions', 'Right-decision rate', '95% Wilson'];
+  out.push('### Run classes', '');
+  out.push(table(['Arm', ...heads], runClasses.perArm.map((r) => [r.arm, ...counts(r)])), '');
+  if (stacks.length > 1) {
+    out.push('### Run classes per stack', '');
+    out.push(table(['Arm', 'Stack', ...heads], runClasses.perStack.map((r) => [r.arm, r.stack, ...counts(r)])), '');
+  }
+  out.push('Delivered correct: the gauge passes and the judge passes. Known failure: the gauge fails and the judge fails. Silent defect: the gauge passes and the judge fails. False rejection: the gauge fails and the judge passes. The decision is right in the first two. The rate is right decisions over classified runs, with a 95% Wilson interval; a run with no gauge result is Unclassified and counts as neither right nor wrong. Descriptive: a gauge that always fails scores one minus the correct rate, so read this rate next to the correct rate.');
   return out.join('\n');
 }
 
@@ -394,6 +449,7 @@ export function renderAnalysis(report, title) {
     out.push('False confidence is the share of gauge passes that the judge fails. These are final-state tables: the loop stops when the gauge passes, so they do not give sensitivity or specificity, and a rate is never moved from one arm to another.', '');
   }
 
+  if (report.runClasses) out.push(renderRunClasses(report.runClasses, report.stacks), '');
   if (report.comparison) out.push(renderComparison(report.comparison), '');
   if (report.comparison?.firstAttempt) out.push(renderFirstAttempt(report.comparison, report.comparison.firstAttempt), '');
   if (report.attemptGauge) out.push(renderAttemptGauge(report.attemptGauge, report.attemptSettings), '');
@@ -449,6 +505,9 @@ function readInput(file, io) {
 function commandAnalyze(positional, options, io) {
   if (positional.length === 0) throw new UsageError('analyze needs at least one runs.csv');
   if ((options.treatment === undefined) !== (options.control === undefined)) throw new UsageError('a comparison needs both --treatment and --control');
+  const outcome = options.outcome ?? 'correct';
+  if (outcome !== 'correct' && outcome !== 'decision-right') throw new UsageError(`--outcome must be correct or decision-right, got "${options.outcome}"`);
+  if (outcome === 'decision-right' && options.treatment === undefined) throw new UsageError('--outcome decision-right needs --treatment and --control');
   const { dStar, plan } = planOf(options);
   if (plan && options.treatment === undefined) throw new UsageError('the decision rule needs --treatment and --control');
   const settings = {
@@ -460,6 +519,7 @@ function commandAnalyze(positional, options, io) {
     plan,
     look: number(options, 'look', undefined),
     hash: options.hash,
+    outcome,
   };
   if (options.attempts !== undefined) {
     if (positional.length !== 1) throw new UsageError('--attempts goes with one runs file: the attempts.csv belongs to the runs.csv of the same results directory');

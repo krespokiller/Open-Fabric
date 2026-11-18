@@ -15,10 +15,36 @@ node analysis/cli.mjs analyze experiments/E01-pilot-full-task/data/runs.csv
 node analysis/cli.mjs analyze experiments/E03-exploratory-loop-fixes/data/runs.csv
 node analysis/cli.mjs analyze experiments/E01-pilot-full-task/data/runs.csv experiments/E03-exploratory-loop-fixes/data/runs.csv
 node analysis/cli.mjs analyze <results-dir>/runs.csv --treatment kit-tests --control kit-bare --attempts <results-dir>/attempts.csv
+node analysis/cli.mjs analyze analysis/fixtures/runs-classes-synthetic.csv --treatment kit-tests --control kit-bare --outcome decision-right
 node analysis/cli.mjs help
 ```
 
 `analyze` takes one or more files and, with several, adds an "All files together" section. A column a file lacks is named in the output, never guessed: the two pilot files have no slot, seed or gauge column, so each stack is one stratum and the gauge tables say "Not available". When an arm has no correct run, the cost per correct run is printed as "at least N tokens per correct run" and no ratio is formed, so nothing divides by zero. To compare two arms add `--treatment ARM --control ARM`; to apply the decision rule to that comparison also add `--d-star 30 --looks 5` with `--z-r 2.05` or `--delta X` (and `--look`, `--hash`, `--plan-hash` for the instrument checks). Step 1 of the rule (an incomplete block is `undecidable`, a broken instrument) needs the planned design: add `--stacks django,nextjs --slots cart,ledger` (both together; `--slots all` for a file with no slot column). A planned stack and slot with no runs, a cell outside the plan, or cells with different numbers of runs then give `undecidable` with the cause. Without them the output says the incomplete-block check was not applied, and a missing slot goes unnoticed.
+
+## The second outcome: the decision is right
+
+`analyze` compares two arms on one outcome per run. The default, `--outcome correct`, is whether the run passes every test of both hidden suites. `--outcome decision-right` compares the arms on a second one: at the end of a run the gauge says pass or no pass (`gauge_pass` in `runs.csv`: 1 when every check visible to the arm passed), and the decision is right when it agrees with the hidden judge, `gauge_pass == correct`. A run falls in one of four classes:
+
+| Class | gauge_pass | correct | Decision |
+| --- | --- | --- | --- |
+| Delivered correct | 1 | 1 | right |
+| Known failure | 0 | 0 | right |
+| Silent defect | 1 | 0 | wrong |
+| False rejection | 0 | 1 | wrong |
+
+The machinery is the same, not a copy: the cells by stack and slot, the exact conditional Cochran-Mantel-Haenszel test, the Newcombe limits, and the decision rule with `--d-star`, `--looks`, `--z-r` or `--delta`, `--stacks`, `--slots` and `--look`. Only the count per cell changes: right decisions instead of correct runs. The table headers say "Right decision", and the verdict line names the outcome ("Verdict for the outcome decision-right: ..."). The sections that are about correctness by definition (correct runs per arm, cost per correct run, hidden pass fraction, gauge against judge, first attempt, per attempt) do not change with the option. `--outcome decision-right` needs `--treatment` and `--control`.
+
+A run with no gauge result cannot be classified. If any run of the two compared arms has none, the comparison is refused with an error that names the count; it is never counted as right or wrong. In the "Run classes" table such runs are counted in the column "Unclassified" and left out of the rate.
+
+The table "Run classes" (per arm, and per arm and stack when there are several stacks) has the counts of the four classes and the right-decision rate with its 95% Wilson interval. It is descriptive, and is printed with the default outcome too whenever every run of the file has a gauge result.
+
+Read the outcome next to the correct rate: a gauge that always fails (`gauge_pass = 0` in every run) is right exactly when the run is wrong, so it scores one minus the correct rate. A high right-decision rate alone says nothing about delivering correct software.
+
+Worked example, `analysis/fixtures/runs-classes-synthetic.csv` (one stack, slots cart and ledger, 4 runs per arm and slot). `kit-tests` has 4 delivered correct, 2 known failures, 1 silent defect and 1 false rejection, so 6 of 8 decisions are right (75.0%, Wilson 40.9% to 92.9%). `kit-bare` has 2, 1, 4 and 1, so 3 of 8 (37.5%, Wilson 13.7% to 69.4%). The strata differ between the two outcomes. Correct runs: cart 3 of 4 against 1 of 4, ledger 2 of 4 against 2 of 4. Right decisions: cart 3 of 4 against 2 of 4, ledger 3 of 4 against 1 of 4, pooled 6 of 8 against 3 of 8, +37.5 points (Newcombe -9.2 to +67.3), exact one-sided p = 644 / 3920 = 0.1643. The gauge of `kit-bare` lets 4 of its 8 runs through as silent defects, against 1 of 8 for `kit-tests`; that, not the correct rate, is what this outcome measures.
+
+```
+node analysis/cli.mjs analyze analysis/fixtures/runs-classes-synthetic.csv --treatment kit-tests --control kit-bare --outcome decision-right
+```
 
 ## Two secondary results from per-attempt data
 
@@ -74,6 +100,7 @@ In formulas. Strata are stack x slot, a cell is arm x stratum, d* is the smalles
 - `readAttempts(csv)`: one object per row of `attempts.csv` (stack, arm, slot, run, attempt, built, gaugePass, judgeCorrect, tokensIn, tokensOut); the arm is normalized as `readRuns` does it; missing required columns are an error that names them.
 - `attemptGaugeTable(attempts, { seed, resamples })`: the per-attempt 2x2 table of one arm (or arm and slot), the three rates, and their bootstrap-by-run intervals; `attemptGaugeTables(attempts, options)` makes one table per arm and per slot.
 - `firstAttemptCells(runs, treatmentArm, controlArm)`: the cells of the comparison with every run scored at its first attempt; `null` (not available) when a run of either arm has no first-attempt result.
+- `runClass(run)`: `delivered_correct`, `known_failure`, `silent_defect`, `false_rejection`, or `null` when the run has no gauge result; `classCounts(runs)`: the counts of the four classes, `unclassified`, the right decisions and their rate with Wilson interval; `decisionRightCells(runs, treatmentArm, controlArm)`: the cells of the comparison counting right decisions, `null` when a run of either arm has no gauge result.
 
 `simulate.mjs`
 
