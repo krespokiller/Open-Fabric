@@ -59,11 +59,15 @@ The default `--base-url` is `http://localhost:12434/engines/v1`; any OpenAI-comp
 
 Re-running with the same `--out` directory resumes: finished runs are skipped, and runs that hit environment errors (model server down, Docker out of disk, container clock skew) are retried; they are never counted. The harness refuses to resume if the model, temperature, budget, slot list or any experiment file changed.
 
-Results land in `results/<dir>/`: `report.md` (tables per stack and arm with mean ± sd, per-test pass rates, stop reasons, uncounted runs, hashes, machine), `runs.csv`, and `runs/*/` with `metrics.json`, `transcript.jsonl` and the produced `workspace/`.
+Results land in `results/<dir>/`: `report.md` (tables per stack and arm with mean ± sd, per-test pass rates, correct at the first attempt, stop reasons, uncounted runs, hashes, machine), `runs.csv`, `attempts.csv`, and `runs/*/` with `metrics.json`, `transcript.jsonl` and the produced `workspace/`.
+
+### The hidden suites after every attempt
+
+Both hidden suites also run after every attempt, on the same running app that the visible checks just used, and the result is recorded (`judgeCorrect`, `judgeTestsRun`, `judgeFirstFail` and `judgeMs` in the attempt's entry of `metrics.json`). It exists so that arms can be compared with the calls held equal (every arm scored at its first attempt) and so that the sensitivity and specificity of the gauge can be estimated per attempt. The model never sees any of it: the judgement runs after the logs for the model were read, it stops at the first failing test, it is not part of the feedback, the history or the transcript, and the stop rule still reads the visible checks only, so the prompts and the number of calls do not change. The final judgement on a fresh build with an empty database, which runs every test, remains the primary metric. If the last attempt and the final judgement ever disagree on the same code, the report warns and the selftest fails.
 
 ### `runs.csv` columns
 
-One row per run, in the order of `runs/`. The first 17 columns are fixed for compatibility; new columns are only appended.
+One row per run, in the order of `runs/`. The first 20 columns are fixed for compatibility; new columns are only appended.
 
 | Column | Meaning |
 | --- | --- |
@@ -78,10 +82,27 @@ One row per run, in the order of `runs/`. The first 17 columns are fixed for com
 | `slot` | The slot a kit run fills (`discount`, `cart`, ...). Empty for the full-task arms |
 | `gauge_pass` | `1` when every check visible to that arm (smoke, plus the public tests for `tests`, `of-spec`, `of-code` and `kit-tests`) passed in the last attempt, else `0`. It is the stop rule: `1` exactly when `stop_reason` is `visible_checks_pass` |
 | `correct` | `1` when the run passes every test of both hidden suites (and both suites ran), else `0`. The report's "Runs passing both suites" counts these |
+| `first_correct` | `1` when the hidden suites passed in full on the state after attempt 1, else `0`. Empty for results recorded before the per-attempt judgement |
+| `first_correct_attempt` | The number of the first attempt whose state passed both hidden suites in full. Empty when no attempt did, and for older results |
+| `judge_agrees` | `1` when the hidden judgement of the last attempt equals the final judgement (both say correct, or both say not), else `0`. A `0` means the judge gave two answers on the same code and the instrument must be checked. Empty for older results |
+
+### `attempts.csv` columns
+
+One row per attempt of every run, next to `runs.csv`. It holds counts and flags only, never a hidden test id or name.
+
+| Column | Meaning |
+| --- | --- |
+| `stack`, `arm`, `slot`, `run` | As in `runs.csv` (a kit arm is `kit-bare.<slot>`) |
+| `attempt` | The attempt number, from 1 |
+| `built` | `1` when the app built and started |
+| `visible_passed`, `visible_total` | Visible checks passed and run in that attempt |
+| `gauge_pass` | `1` when the app built and every visible check passed in that attempt |
+| `judge_correct` | `1` when the hidden suites passed in full on that attempt's state, else `0`. Empty for results recorded before the per-attempt judgement |
+| `prompt_tokens`, `completion_tokens` | Tokens of that attempt's model call |
 
 ## Rules for a credible result
 
-1. Fix the success criterion before running and publish it before the numbers. Suggested: OpenFabric wins if, on every stack, `of-spec` passes more hidden tests than `tests` and spends at least 30% fewer tokens per passed test. Secondary comparison: `of-spec` versus `docs`.
+1. Fix the success criterion before running and publish it before the numbers: use the decision rule in [`docs/method.md`](../docs/method.md) (section "The decision rule"), with its smallest difference that matters preregistered.
 2. Never edit experiment files after seeing results. The report prints the experiment hash and each suite's SHA-256.
 3. Publish everything, including runs where OpenFabric loses.
 4. At least 3 runs per cell, ideally 5: the same task can vary up to 30x in tokens between runs.
