@@ -7,7 +7,7 @@ No thesis has been supported or refuted yet. Of 21 theses, 3 ended undecidable, 
 | `undecidable` | T1, T2, T3 |
 | `superseded` | T4 (by T20), T5 (by T17) |
 | `discarded` | T8, T9, T10 |
-| `designed` | T11, T12, T13 |
+| `designed` | T11, T12, T13, T22 |
 | `proposed` | T6, T7, T14, T15, T16, T17, T18, T19, T20, T21 |
 
 ## How to read this registry
@@ -37,9 +37,10 @@ Does a gauge the model can see make the gaps it fills correct, and does it matte
 
 | # | Thesis | Primary comparison | Criterion | Status | Experiment |
 | --- | --- | --- | --- | --- | --- |
-| T11 | Having the gauge in view improves correctness when filling a slot | `kit-tests` against `kit-bare` | Exact conditional Cochran-Mantel-Haenszel test stratified by stack and slot, one-sided alpha 0.025: `supported` needs a significant test and a positive observed difference in every stack; `refuted` when the Newcombe upper limit of the difference is below d*, with d* = 30 percentage points. The runs per cell (5 in one look, or 3 then 6 in two looks) are fixed at preregistration. **Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11; the owner has not confirmed it.** See [the note on T11](#t11-was-revised-on-2026-11-18) | `designed` | [E04](../experiments/E04-slot-gauge/README.md) |
+| T11 | Having the gauge in view improves correctness when filling a slot | `kit-tests` against `kit-bare` | Exact conditional Cochran-Mantel-Haenszel test stratified by stack and slot, one-sided alpha 0.025: `supported` needs a significant test and a positive observed difference in every stack; `refuted` when the Newcombe upper limit of the difference is below d*, with d* = 30 percentage points. One look of 5 runs per cell (100 runs), proposed after the exploratory campaign. **Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11; the owner has not confirmed it.** See [the note on T11](#t11-was-revised-on-2026-11-18) | `designed` | [E04](../experiments/E04-slot-gauge/README.md) |
 | T12 | A gauge that does not cover the subtle rule gives false confidence | Inside `kit-tests`, discount slot: visible checks against hidden tests | Secondary, discount slot, `kit-tests` only. False confidence = runs where the gauge passes and the judge fails, divided by runs where the gauge passes. `supported` when the Clopper-Pearson lower limit (95%) is above 0.5, `refuted` when the upper limit is below 0.5, otherwise `undecidable`; "not estimable" when no run passes the gauge. The public test P1 does not exercise half-to-even rounding. With about 10 to 12 runs it will often be `undecidable`. **Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11; not confirmed** | `designed` | [E04](../experiments/E04-slot-gauge/README.md) |
 | T13 | The gauge does not make the result more expensive | `kit-tests` against `kit-bare`, tokens per correct run | Secondary. Ratio of tokens per correct run, `kit-tests` over `kit-bare`, with the interval of the statistics tool. `supported` when the upper limit is below 1, `refuted` when the lower limit is above 1, otherwise `undecidable`. If either arm has no correct run, only a one-sided statement is made and the verdict is `undecidable`. **Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11; not confirmed** | `designed` | [E04](../experiments/E04-slot-gauge/README.md) |
+| T22 | With the gauge in view, the pass or no-pass decision at the end of a run agrees with the judge more often | `kit-tests` against `kit-bare`, on the outcome "the decision is right": the run passed its visible checks and is correct, or did not pass them and is wrong | The same test, strata, alpha and d* = 30 points as T11, on that outcome. The four classes of runs are reported per arm (delivered correct, known failure, silent defect, false rejection), because a gauge that always fails would also score well on wrong runs. **Proposed by the assistant on 2026-11-18, from the E04 exploratory campaign (8 of 10 against 5 of 10, not counted as evidence); not confirmed** | `designed` | [E04](../experiments/E04-slot-gauge/README.md) |
 | T18 | A gauge written by someone else detects more than one written by the same model | An arm where the agent writes its own tests against an arm with an independent gauge | To be fixed after the exploratory run. The report also counts the runs that pass every visible example and fail the hidden suite. **Not set** | `proposed` | [E07](../experiments/E07-independent-gauge/README.md) |
 
 ## RQ2 Assembly
@@ -113,6 +114,7 @@ A criterion that the owner has not confirmed stays `proposed` and cannot be prer
 | T11 to T13 | Proposed, then revised. The owner has not confirmed either version | The assistant | 2026-11-11, revised 2026-11-18 |
 | T14, T16, T17, T18, T19 | Proposed with the single-stack pivot. No owner confirmation is recorded | The record does not name the author | 2026-11-16 |
 | T15 (revised), T20, T21 | Proposed. The owner has not confirmed them | The assistant | 2026-11-17 |
+| T22 | Proposed after the E04 exploratory campaign. The owner has not confirmed it | The assistant | 2026-11-18 |
 
 ## Notes
 
