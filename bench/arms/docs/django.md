@@ -50,7 +50,7 @@ class Item(models.Model):
 
 Without an explicit primary key, a model gets `id = BigAutoField(primary_key=True)` (`DEFAULT_AUTO_FIELD`). `ForeignKey(Other, on_delete=models.PROTECT)` adds an `other_id` column; `related_name` names the reverse accessor.
 
-Migrations are Python files in `core/migrations/` (for example `0001_initial.py`) that describe schema changes; `python manage.py migrate` applies them. A migration file contains a `Migration(migrations.Migration)` class with `dependencies` and `operations` such as `migrations.CreateModel(name=..., fields=[...], options={...})`. The container runs `migrate` on every start, so new migration files are applied automatically. Every model needs a migration that creates its table.
+Migrations are Python files in `core/migrations/` (for example `0001_initial.py`) that describe schema changes; `python manage.py migrate` applies them. A migration file contains a `Migration(migrations.Migration)` class with `dependencies` and `operations` such as `migrations.CreateModel(name=..., fields=[...], options={...})`. The container runs `makemigrations` and then `migrate` on every start, so the migration for your models is generated and applied automatically; you do not need to write migration files by hand.
 
 ## Querying
 

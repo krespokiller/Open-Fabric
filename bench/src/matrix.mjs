@@ -17,8 +17,22 @@ import { judge, suiteHashes, experimentHash } from './judge.mjs';
 import { startPsp } from './psp.mjs';
 import { writeReport } from './report.mjs';
 
-function formatFeedback({ applied, parsed, app, visible, logs }) {
+// One line per finished attempt. The loop is stateless, so without this the model cannot tell
+// that it is sending the same answer again or going back and forth between two answers.
+function historyLine({ attempt, applied, app, visible, repeated }) {
+  const files = applied.written.length ? `wrote ${applied.written.length} file(s)` : 'wrote no files';
+  let outcome;
+  if (!app.ok) outcome = `${app.phase} failed (${String(app.reason).split('\n')[0].slice(0, 120)})`;
+  else {
+    const failed = visible.filter((r) => !r.pass).map((r) => r.id);
+    outcome = `built, checks ${visible.length - failed.length}/${visible.length} passed${failed.length ? ` (failed: ${failed.join(', ')})` : ''}`;
+  }
+  return `- Attempt ${attempt}: ${files}; ${outcome}${repeated ? '; same answer as the attempt before' : ''}`;
+}
+
+function formatFeedback({ applied, parsed, app, visible, logs, repeated }) {
   const out = [];
+  if (repeated) out.push('WARNING: your previous answer was identical to the one before it, so the result did not change. Do not send the same files again: read the error below and change the code that causes it.');
   if (parsed.truncated) out.push(`WARNING: your answer ended inside the file "${parsed.truncated}". That file was not written. Write fewer or shorter files per answer.`);
   if (parsed.malformed.length) out.push(`WARNING: these blocks were not closed with >>>FILE before the next <<<FILE: ${parsed.malformed.join(', ')}. Close every block.`);
   if (applied.rejected.length) out.push(`Rejected changes: ${applied.rejected.map((r) => `${r.path} (${r.why})`).join(', ')}.`);
@@ -60,8 +74,10 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
   };
   const started = Date.now();
   let feedback = '';
+  const history = [];
+  let lastContent = null;
   for (let attempt = 1; attempt <= opts.budget; attempt++) {
-    const messages = buildMessages({ stack, arm, workspace, feedback, attempt, budget: opts.budget });
+    const messages = buildMessages({ stack, arm, workspace, feedback, attempt, budget: opts.budget, history });
     const answer = await chat({ ...opts.modelConfig, messages, seed: runIndex * 1000 + attempt }); // throws InfraError
     metrics.calls++;
     metrics.promptTokens += answer.promptTokens;
@@ -88,7 +104,11 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
       }
     }
     const passed = visible.filter((r) => r.pass).length;
+    const repeated = lastContent !== null && answer.content === lastContent;
+    lastContent = answer.content;
+    history.push(historyLine({ attempt, applied, app, visible, repeated }));
     metrics.attempts.push({
+      repeated,
       attempt, promptTokens: answer.promptTokens, completionTokens: answer.completionTokens, promptEstimate: answer.promptEstimate,
       finishReason: answer.finishReason, filesWritten: applied.written.length, rejected: applied.rejected.length,
       truncated: parsed.truncated, malformed: parsed.malformed.length, built: app.ok, visiblePassed: passed, visibleTotal: visible.length,
@@ -98,7 +118,7 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
       metrics.stopReason = 'visible_checks_pass';
       break;
     }
-    feedback = formatFeedback({ applied, parsed, app, visible, logs });
+    feedback = formatFeedback({ applied, parsed, app, visible, logs, repeated });
   }
 
   // Final judgement: fresh build, empty database, hidden suites only (hidden first, then hidden2).

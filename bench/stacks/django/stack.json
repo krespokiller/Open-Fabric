@@ -9,7 +9,7 @@
     "manifests": ["requirements.txt"],
     "install": "python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt",
     "build": ".venv/bin/python manage.py check",
-    "start": ".venv/bin/python manage.py migrate --noinput && exec .venv/bin/gunicorn shop.wsgi -b 0.0.0.0:8080 -w 2 --threads 4"
+    "start": ".venv/bin/python manage.py makemigrations --noinput && .venv/bin/python manage.py migrate --noinput --run-syncdb && exec .venv/bin/gunicorn shop.wsgi -b 0.0.0.0:8080 -w 2 --threads 4"
   },
   "selftestBreak": {
     "file": "core/views.py",

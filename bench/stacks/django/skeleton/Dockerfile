@@ -5,4 +5,4 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 8080
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn shop.wsgi -b 0.0.0.0:8080 -w 2 --threads 4 --access-logfile -"]
+CMD ["sh", "-c", "python manage.py makemigrations --noinput && python manage.py migrate --noinput --run-syncdb && gunicorn shop.wsgi -b 0.0.0.0:8080 -w 2 --threads 4 --access-logfile -"]

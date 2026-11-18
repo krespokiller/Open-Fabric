@@ -46,7 +46,7 @@ function armContext(stack, arm) {
   throw new Error(`unknown arm ${arm}`);
 }
 
-export function buildMessages({ stack, arm, workspace, feedback, attempt, budget }) {
+export function buildMessages({ stack, arm, workspace, feedback, attempt, budget, history = [] }) {
   const hidden = arm === 'of-code' ? stack.codePiece.hideFromPrompt || [] : [];
   const snap = snapshot(workspace, { ignore: stack.snapshotIgnore || [], hidden });
   const readOnly = (stack.readOnly || []).join(', ');
@@ -60,6 +60,9 @@ export function buildMessages({ stack, arm, workspace, feedback, attempt, budget
     read('task/task.md'),
     armContext(stack, arm),
     `# Project files\n\nTree:\n${snap.tree}\n\n${snap.contents}`,
+    history.length > 1
+      ? `# Earlier attempts in this run\n\nThe project files above already contain what you wrote. If the result has not changed between attempts, change your approach.\n\n${history.join('\n')}`
+      : '',
     `# Status\n\nThis is attempt ${attempt} of ${budget}.\n\n${feedback || 'This is the first attempt. Nothing has been built yet.'}`,
     'Write the files now. Every file goes in its own <<<FILE relative/path ... >>>FILE block, as described in the output format. Do not write step-by-step explanations or code outside those blocks: only the blocks are applied to the project.',
   ]
