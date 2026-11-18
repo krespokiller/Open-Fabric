@@ -35,6 +35,19 @@ export function expandArm(stack, arm, slots = null) {
   return all.filter((s) => !slots || slots.includes(s)).map((s) => `${base}.${s}`);
 }
 
+// Why this selection of arms and slots cannot run, or null when it can. Without this check a slot
+// that no selected stack has would run nothing and still end without an error.
+export function kitSelectionProblem(stacks, arms, slots = null) {
+  const kitArms = arms.map(parseArm).filter((a) => a.kit);
+  if (slots && !kitArms.some((a) => !a.slot)) return '--slots only applies to the arms kit-bare and kit-tests given without a slot';
+  if (!kitArms.length) return null;
+  const known = [...new Set(stacks.flatMap((s) => Object.keys(s.kit?.slots || {})))];
+  if (!known.length) return `none of the selected stacks (${stacks.map((s) => s.name).join(', ')}) has kit slots`;
+  const asked = [...(slots || []), ...kitArms.filter((a) => a.slot).map((a) => a.slot)];
+  const unknown = [...new Set(asked.filter((s) => !known.includes(s)))];
+  return unknown.length ? `unknown slot ${unknown.join(', ')} (slots in the selected stacks: ${known.join(', ')})` : null;
+}
+
 export function armApplies(stack, arm) {
   const { slot, kit } = parseArm(arm);
   if (kit) return Boolean(slot && stack.kit?.slots?.[slot]);
@@ -89,10 +102,14 @@ export function buildMessages({ stack, arm, workspace, feedback, attempt, budget
   const hidden = arm === 'of-code' ? stack.codePiece.hideFromPrompt || [] : kitInstalledFiles(stack, arm);
   const snap = snapshot(workspace, { ignore: stack.snapshotIgnore || [], hidden });
   const readOnly = (stack.readOnly || []).join(', ');
+  const kit = parseArm(arm);
   const system = [
     `You are an expert software engineer working inside an existing ${stack.label} project.`,
     'You cannot run commands. After each answer, the files you write are applied to the project; then the project is built with its Dockerfile, started with an empty PostgreSQL database, and checked automatically. You will see the results in the next message.',
-    `Read-only files (do not write them): ${readOnly || 'none'}. You may change dependency manifests if you need a library.`,
+    // A kit run rejects every write outside the slot, so its prompt must not invite a manifest change.
+    kit.kit
+      ? `Read-only files (do not write them): every file except ${stack.kit.slots[kit.slot]}.`
+      : `Read-only files (do not write them): ${readOnly || 'none'}. You may change dependency manifests if you need a library.`,
     FORMAT_RULES,
   ].join('\n\n');
   const user = [

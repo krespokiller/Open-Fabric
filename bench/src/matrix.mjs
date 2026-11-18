@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { InfraError, ROOT, readJson, sh, tail, writeJson } from './util.mjs';
 import { loadStack, createWorkspace, applyChanges, listFiles } from './workspace.mjs';
-import { DEFAULT_ARMS, armApplies, armSeesPublicTests, buildMessages, expandArm, isKnownArm, parseArm } from './prompts.mjs';
+import { DEFAULT_ARMS, armApplies, armSeesPublicTests, buildMessages, expandArm, isKnownArm, kitSelectionProblem, parseArm } from './prompts.mjs';
 import { chat } from './model.mjs';
 import { parseAnswer } from './protocol.mjs';
 import { startApp } from './runner.mjs';
@@ -160,14 +160,23 @@ const COMPARED = ['model', 'baseUrl', 'temperature', 'maxTokens', 'budget', 'run
 export async function runMatrix({ cmd, values, stacks, stamp }) {
   const selftest = cmd === 'selftest';
   let fake = null;
+  let kitSelftestProblems = null;
   if (selftest) {
-    const { startFakeModel } = await import('./fakemodel.mjs');
-    fake = await startFakeModel();
+    const fakeModel = await import('./fakemodel.mjs');
+    fake = await fakeModel.startFakeModel();
+    kitSelftestProblems = fakeModel.kitSelftestProblems;
   }
-  // The selftest also exercises one kit cell, so the slot path is covered without tokens.
-  const arms = values.arms ? values.arms.split(',').map((a) => a.trim()) : selftest ? [...DEFAULT_ARMS, 'kit-tests.discount'] : DEFAULT_ARMS;
+  // The selftest also exercises one cell of each kit arm, so the slot path is covered without tokens.
+  // Stacks without slots keep the selftest they had: the kit cells are added only where they can run.
+  const hasSlots = (name) => fs.existsSync(path.join(ROOT, 'stacks', name, 'stack.json')) && Boolean(loadStack(name).kit);
+  const selftestArms = () => [...DEFAULT_ARMS, ...(stacks.some(hasSlots) ? ['kit-bare.cart', 'kit-tests.discount'] : [])];
+  const arms = values.arms ? values.arms.split(',').map((a) => a.trim()) : selftest ? selftestArms() : DEFAULT_ARMS;
   for (const a of arms) if (!isKnownArm(a)) throw new Error(`unknown arm ${a}`);
-  const slots = values.slots ? values.slots.split(',').map((s) => s.trim()) : null;
+  const slots = values.slots === undefined ? null : values.slots.split(',').map((s) => s.trim());
+  if (slots || arms.some((a) => parseArm(a).kit)) {
+    const problem = kitSelectionProblem(stacks.map((name) => loadStack(name)), arms, slots);
+    if (problem) throw new Error(problem);
+  }
   const model = selftest ? 'fake-gold' : values.model;
   if (!model) throw new Error('--model is required (for example the name shown by `docker model list`)');
   const opts = {
@@ -209,6 +218,7 @@ export async function runMatrix({ cmd, values, stacks, stamp }) {
   console.log(`Results in ${outDir}`);
   const localPsp = opts.runtime === 'native' ? await startPsp() : null;
   const infraErrors = [];
+  const selftestProblems = [];
   try {
     for (let r = 1; r <= runs; r++) {
       for (const name of stacks) {
@@ -222,15 +232,24 @@ export async function runMatrix({ cmd, values, stacks, stamp }) {
           }
           console.log(`\n[${name} / ${arm} / run ${r}/${runs}]`);
           if (fake) fake.setScenario({ stack: name, arm });
+          let finished = null;
           try {
             const m = await runOne({ stack, arm, runIndex: r, opts, localPsp, runDir, params });
             console.log(`  => hidden ${m.hiddenPassed}/${m.hiddenTotal}, ${m.calls} calls, ${m.promptTokens + m.completionTokens} tokens${m.tokensEstimated ? ' (estimated)' : ''}, ${m.stopReason}`);
+            finished = m;
           } catch (e) {
             const kind = e instanceof InfraError ? e.kind : 'harness';
             infraErrors.push({ stack: name, arm, run: r, kind, message: e.message });
             writeJson(path.join(runDir, 'error.json'), { kind, message: e.message, stack: e.stack, at: new Date().toISOString() });
             console.log(`  !! ${kind} error, run not counted (it will be retried on resume): ${e.message.split('\n')[0]}`);
             if (kind === 'context' || kind === 'config') throw e;
+          }
+          // Selftest only: a finished kit cell must show that the slot rules held (see fakemodel.mjs).
+          if (finished && kitSelftestProblems && parseArm(arm).kit) {
+            for (const problem of kitSelftestProblems({ stack, arm, runDir, metrics: finished })) {
+              console.log(`  !! selftest: ${problem}`);
+              selftestProblems.push(`${name} / ${arm}: ${problem}`);
+            }
           }
         }
       }
@@ -244,4 +263,5 @@ export async function runMatrix({ cmd, values, stacks, stamp }) {
       console.log(`\n${infraErrors.length} run(s) hit environment errors and were not counted. Fix the cause and re-run with --out ${outDir} to retry them.`);
     }
   }
+  if (selftestProblems.length) throw new Error(`the selftest found ${selftestProblems.length} problem(s) in the kit arms:\n- ${selftestProblems.join('\n- ')}`);
 }

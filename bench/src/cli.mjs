@@ -19,7 +19,8 @@ Arms:   bare, docs, tests, of-spec, of-code (all by default; tests is the contro
         of-code runs only where the stack has a code piece (nextjs)
         kit-bare, kit-tests: the reference service is installed and the model fills one slot per run.
         Not run by default. Each expands to one arm per slot (kit-tests.discount, ...); --slots a,b
-        limits the slots. Slots are listed under "kit" in the stack's stack.json.
+        limits the slots. Slots are listed under "kit" in the stack's stack.json. A slot that no
+        selected stack has is an error, and so is --slots without kit-bare or kit-tests.
 `;
 
 const { positionals, values } = parseArgs({
