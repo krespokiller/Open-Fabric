@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { InfraError, ROOT, readJson, sh, tail, writeJson } from './util.mjs';
 import { loadStack, createWorkspace, applyChanges, listFiles } from './workspace.mjs';
-import { ARMS, DEFAULT_ARMS, armApplies, armSeesPublicTests, buildMessages } from './prompts.mjs';
+import { DEFAULT_ARMS, armApplies, armSeesPublicTests, buildMessages, expandArm, isKnownArm, parseArm } from './prompts.mjs';
 import { chat } from './model.mjs';
 import { parseAnswer } from './protocol.mjs';
 import { startApp } from './runner.mjs';
@@ -61,8 +61,12 @@ function readOnlyFor(stack, arm) {
 async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) {
   fs.rmSync(runDir, { recursive: true, force: true });
   const workspace = path.join(runDir, 'workspace');
-  const overlay = arm === 'of-code' ? path.join(ROOT, stack.codePiece.dir) : null;
+  const kit = parseArm(arm);
+  const overlay = arm === 'of-code' ? path.join(ROOT, stack.codePiece.dir) : kit.kit ? 'gold' : null;
   createWorkspace(stack, workspace, { overlay });
+  const slotFile = kit.kit ? stack.kit.slots[kit.slot] : null;
+  // Kit arms: the reference is installed and the slot file is replaced by its unfilled stub.
+  if (slotFile) fs.copyFileSync(path.join(ROOT, 'arms', 'kit', stack.name, slotFile), path.join(workspace, slotFile));
   const transcript = path.join(runDir, 'transcript.jsonl');
   const visibleSuites = armSeesPublicTests(arm) ? ['smoke', 'public'] : ['smoke'];
   const readOnly = readOnlyFor(stack, arm);
@@ -89,7 +93,7 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
     fs.appendFileSync(transcript, JSON.stringify({ attempt, messages, answer }) + '\n');
 
     const parsed = parseAnswer(answer.content);
-    const applied = applyChanges(workspace, parsed, { readOnly });
+    const applied = applyChanges(workspace, parsed, { readOnly, writable: slotFile ? [slotFile] : null });
     const app = await startApp(stack, workspace, appOpts); // throws InfraError
     metrics.buildMs += app.buildMs || 0;
     let visible = [];
@@ -160,8 +164,10 @@ export async function runMatrix({ cmd, values, stacks, stamp }) {
     const { startFakeModel } = await import('./fakemodel.mjs');
     fake = await startFakeModel();
   }
-  const arms = values.arms ? values.arms.split(',').map((a) => a.trim()) : DEFAULT_ARMS;
-  for (const a of arms) if (!ARMS.includes(a)) throw new Error(`unknown arm ${a}`);
+  // The selftest also exercises one kit cell, so the slot path is covered without tokens.
+  const arms = values.arms ? values.arms.split(',').map((a) => a.trim()) : selftest ? [...DEFAULT_ARMS, 'kit-tests.discount'] : DEFAULT_ARMS;
+  for (const a of arms) if (!isKnownArm(a)) throw new Error(`unknown arm ${a}`);
+  const slots = values.slots ? values.slots.split(',').map((s) => s.trim()) : null;
   const model = selftest ? 'fake-gold' : values.model;
   if (!model) throw new Error('--model is required (for example the name shown by `docker model list`)');
   const opts = {
@@ -207,7 +213,7 @@ export async function runMatrix({ cmd, values, stacks, stamp }) {
     for (let r = 1; r <= runs; r++) {
       for (const name of stacks) {
         const stack = loadStack(name);
-        for (const arm of arms) {
+        for (const arm of arms.flatMap((a) => expandArm(stack, a, slots))) {
           if (!armApplies(stack, arm)) continue;
           const runDir = path.join(outDir, 'runs', `${name}__${arm}__${r}`);
           if (fs.existsSync(path.join(runDir, 'metrics.json'))) {

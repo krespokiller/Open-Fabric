@@ -5,6 +5,15 @@
   "startTimeoutSec": 120,
   "readOnly": ["Dockerfile", ".dockerignore"],
   "snapshotIgnore": [".venv/", "__pycache__/", ".bench-install"],
+  "kit": {
+    "slots": {
+      "discount": "core/discount.py",
+      "cart": "core/cart.py",
+      "signature": "core/signature.py",
+      "webhook": "core/webhook.py",
+      "ledger": "core/ledger.py"
+    }
+  },
   "native": {
     "manifests": ["requirements.txt"],
     "install": "python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt",

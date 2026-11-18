@@ -73,12 +73,15 @@ export function snapshot(dir, { ignore = [], hidden = [], maxFileBytes = 60_000 
 
 // Applies parsed model output to the workspace with path safety and read-only enforcement.
 // Never throws: anything that cannot be applied is reported in `rejected` and fed back to the model.
-export function applyChanges(dir, { files, deletes }, { readOnly = [] } = {}) {
+// `writable`, when given, is an allow-list: every other path is read-only (kit arms: only the slot).
+export function applyChanges(dir, { files, deletes }, { readOnly = [], writable = null } = {}) {
   const written = [];
   const deleted = [];
   const rejected = [];
   const ro = readOnly.map((p) => p.toLowerCase());
-  const isReadOnly = (norm) => ro.some((p) => norm.toLowerCase() === p || p.startsWith(norm.toLowerCase() + '/'));
+  const allowed = writable && writable.map((p) => p.toLowerCase());
+  const isReadOnly = (norm) =>
+    (allowed && !allowed.includes(norm.toLowerCase())) || ro.some((p) => norm.toLowerCase() === p || p.startsWith(norm.toLowerCase() + '/'));
   const safe = (p) => {
     const raw = String(p || '').trim().replace(/\\/g, '/');
     if (!raw || /\s/.test(raw) || raw.length > 200) return { ok: false, why: 'invalid path (empty, contains spaces or too long)' };

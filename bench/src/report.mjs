@@ -11,6 +11,14 @@ const ARM_LABEL = {
   'of-code': 'of-code (task + installed OpenFabric code, slot + mount only)',
 };
 const ARM_ORDER = ['bare', 'docs', 'tests', 'of-spec', 'of-code'];
+// Known arms first, then any other arm id (the kit arms, one per slot) grouped by slot.
+const slotKey = (arm) => arm.split('.').reverse().join('.');
+const armsInOrder = (present) => [
+  ...ARM_ORDER.filter((a) => present.has(a)),
+  ...[...present.keys()].filter((a) => !ARM_ORDER.includes(a)).sort((a, b) => slotKey(a).localeCompare(slotKey(b))),
+];
+const armRank = (a) => (ARM_ORDER.includes(a) ? String(ARM_ORDER.indexOf(a)).padStart(2, '0') : `99${slotKey(a)}`);
+const bothSuitesPerfect = (r) => r.hiddenTotal > 0 && r.hiddenPassed === r.hiddenTotal && (!r.hidden2Total || r.hidden2Passed === r.hidden2Total);
 
 const fmt = (n, d = 0) => (Number.isFinite(n) ? n.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d }) : '—');
 const pm = (xs, d = 0) => (xs.length ? `${fmt(mean(xs), d)} ± ${fmt(sd(xs), d)}` : '—');
@@ -83,7 +91,7 @@ export function writeReport(dir) {
     lines.push('');
     lines.push(HEADER);
     const byArm = group(rs, (r) => r.arm);
-    for (const arm of ARM_ORDER) if (byArm.has(arm)) lines.push(armRow(arm, byArm.get(arm)));
+    for (const arm of armsInOrder(byArm)) lines.push(armRow(arm, byArm.get(arm)));
     lines.push('');
   }
 
@@ -92,16 +100,40 @@ export function writeReport(dir) {
     lines.push('');
     lines.push(HEADER);
     const byArm = group(runs, (r) => r.arm);
-    for (const arm of ARM_ORDER) if (byArm.has(arm)) lines.push(armRow(arm, byArm.get(arm)));
+    for (const arm of armsInOrder(byArm)) lines.push(armRow(arm, byArm.get(arm)));
     lines.push('');
     lines.push('of-code exists only for stacks that have a code piece, so its combined row covers fewer stacks.');
+    lines.push('');
+  }
+
+  // Slot arms: the rest of the service is the reference, so a run is correct only when both hidden suites pass in full.
+  const kitRuns = runs.filter((r) => /^kit-/.test(r.arm));
+  if (kitRuns.length) {
+    lines.push('## Slot arms: runs with every hidden test passing');
+    lines.push('');
+    lines.push('In the kit arms the tool installs the reference service and the model writes one function (the slot). Any hidden failure therefore comes from that function. A run counts here only when both hidden suites pass in full. `kit-bare` sees the task and the slot contract; `kit-tests` also sees the public tests and their results.');
+    lines.push('');
+    lines.push('| Stack | Slot | kit-bare correct | kit-tests correct | kit-bare calls | kit-tests calls | kit-bare tokens | kit-tests tokens |');
+    lines.push('| --- | --- | --- | --- | --- | --- | --- | --- |');
+    const cell = (rs) => ({
+      ok: rs.length ? `${rs.filter(bothSuitesPerfect).length}/${rs.length}` : '—',
+      calls: rs.length ? fmt(mean(rs.map((r) => r.calls)), 1) : '—',
+      tok: rs.length ? fmt(mean(rs.map((r) => r.promptTokens + r.completionTokens))) : '—',
+    });
+    const bySlot = group(kitRuns, (r) => `${r.stack} / ${r.arm.split('.')[1]}`);
+    for (const [key, rs] of [...bySlot].sort(([a], [b]) => a.localeCompare(b))) {
+      const [stack, slot] = key.split(' / ');
+      const b = cell(rs.filter((r) => r.arm.startsWith('kit-bare.')));
+      const t = cell(rs.filter((r) => r.arm.startsWith('kit-tests.')));
+      lines.push(`| ${stack} | ${slot} | ${b.ok} | ${t.ok} | ${b.calls} | ${t.calls} | ${b.tok} | ${t.tok} |`);
+    }
     lines.push('');
   }
 
   // Per-test pass rates.
   const rank = (k) => {
     const [s, a] = k.split(' / ');
-    return `${s}\u0000${String(ARM_ORDER.indexOf(a)).padStart(2, '0')}`;
+    return `${s}\u0000${armRank(a)}`;
   };
   const cells = [...group(runs, (r) => `${r.stack} / ${r.arm}`)].sort(([a], [b]) => rank(a).localeCompare(rank(b)));
   if (cells.length) {

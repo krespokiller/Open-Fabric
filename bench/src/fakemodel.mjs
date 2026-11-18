@@ -13,6 +13,8 @@ import { estimateTokens } from './model.mjs';
 function goldFiles(stack, arm) {
   const dir = path.join(stack.dir, 'gold');
   let files = listFiles(dir).map((p) => ({ path: p, content: fs.readFileSync(path.join(dir, p), 'utf8') }));
+  const [base, slot] = String(arm).split('.');
+  if (base.startsWith('kit-')) return files.filter((f) => f.path === stack.kit.slots[slot]);
   if (arm === 'of-code') {
     const installed = new Set(listFiles(path.join(ROOT, stack.codePiece.dir)));
     files = files.filter((f) => !installed.has(f.path) || f.path === stack.codePiece.slotFile);

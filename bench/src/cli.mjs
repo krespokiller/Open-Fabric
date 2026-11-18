@@ -8,7 +8,7 @@ const HELP = `openfabric-bench
 
 Usage:
   node src/cli.mjs validate-gold [--stacks a,b] [--runtime docker|native] [--pg-admin-url URL]
-  node src/cli.mjs run --model NAME [--base-url URL] [--api-key KEY] [--stacks a,b] [--arms a,b]
+  node src/cli.mjs run --model NAME [--base-url URL] [--api-key KEY] [--stacks a,b] [--arms a,b] [--slots a,b]
                        [--runs N] [--budget N] [--temperature T] [--max-tokens N]
                        [--runtime docker|native] [--pg-admin-url URL] [--out DIR] [--label TEXT]
   node src/cli.mjs report DIR
@@ -17,6 +17,9 @@ Usage:
 Stacks: ${'%STACKS%'}
 Arms:   bare, docs, tests, of-spec, of-code (all by default; tests is the control for the piece)
         of-code runs only where the stack has a code piece (nextjs)
+        kit-bare, kit-tests: the reference service is installed and the model fills one slot per run.
+        Not run by default. Each expands to one arm per slot (kit-tests.discount, ...); --slots a,b
+        limits the slots. Slots are listed under "kit" in the stack's stack.json.
 `;
 
 const { positionals, values } = parseArgs({
@@ -24,6 +27,7 @@ const { positionals, values } = parseArgs({
   options: {
     stacks: { type: 'string' },
     arms: { type: 'string' },
+    slots: { type: 'string' },
     runs: { type: 'string', default: '5' },
     budget: { type: 'string', default: '8' },
     model: { type: 'string' },

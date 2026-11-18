@@ -10,6 +10,15 @@
     "slotFile": "lib/of/discount.ts",
     "hideFromPrompt": ["lib/of/db.ts", "lib/of/http.ts", "lib/of/handlers.ts"]
   },
+  "kit": {
+    "slots": {
+      "discount": "lib/of/discount.ts",
+      "cart": "lib/of/cart.ts",
+      "signature": "lib/of/signature.ts",
+      "webhook": "lib/of/webhook.ts",
+      "ledger": "lib/of/ledger.ts"
+    }
+  },
   "native": {
     "manifests": ["package.json"],
     "install": "npm install --no-audit --no-fund",

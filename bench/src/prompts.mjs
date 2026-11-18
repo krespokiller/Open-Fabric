@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from './util.mjs';
 import { FORMAT_RULES } from './protocol.mjs';
-import { snapshot } from './workspace.mjs';
+import { listFiles, snapshot } from './workspace.mjs';
 
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
@@ -13,26 +13,58 @@ export const ARMS = ['bare', 'docs', 'tests', 'of-spec', 'of-code'];
 // Arms run when --arms is not given. `tests` is the control for the piece: same public-test feedback, no piece.
 export const DEFAULT_ARMS = ['bare', 'docs', 'tests', 'of-spec', 'of-code'];
 
+// Kit arms: the tool installs the whole reference service and leaves one slot (a single rule
+// function) for the model. `kit-bare` gets the task and the slot contract; `kit-tests` also gets
+// the public tests and their results. A kit arm id carries its slot: `kit-tests.discount`.
+export const KIT_ARMS = ['kit-bare', 'kit-tests'];
+
+export function parseArm(arm) {
+  const [base, slot] = arm.split('.');
+  return KIT_ARMS.includes(base) ? { base, slot: slot || null, kit: true } : { base: arm, slot: null, kit: false };
+}
+
+export function isKnownArm(arm) {
+  return ARMS.includes(arm) || parseArm(arm).kit;
+}
+
+// `kit-bare` becomes one arm per slot of the stack; other arms are returned as they are.
+export function expandArm(stack, arm, slots = null) {
+  const { base, slot, kit } = parseArm(arm);
+  if (!kit || slot) return [arm];
+  const all = Object.keys(stack.kit?.slots || {});
+  return all.filter((s) => !slots || slots.includes(s)).map((s) => `${base}.${s}`);
+}
+
 export function armApplies(stack, arm) {
+  const { slot, kit } = parseArm(arm);
+  if (kit) return Boolean(slot && stack.kit?.slots?.[slot]);
   if (arm === 'of-code') return Boolean(stack.codePiece);
   if (arm === 'docs') return fs.existsSync(path.join(ROOT, 'arms', 'docs', `${stack.name}.md`));
   return true;
 }
 
 export function armSeesPublicTests(arm) {
-  return arm === 'tests' || arm === 'of-spec' || arm === 'of-code';
+  return arm === 'tests' || arm === 'of-spec' || arm === 'of-code' || parseArm(arm).base === 'kit-tests';
+}
+
+function publicTestsContext() {
+  const tests = read('arms/openfabric/piece.md').split('## 3. Public tests')[1] || '';
+  return `# Automatic tests\n\nAfter every attempt, these public tests run against your app and you will see their results.${tests.replace('These run against your app after every attempt. Their values differ from the examples above on purpose.', '')}`;
 }
 
 function armContext(stack, arm) {
+  const { base, slot, kit } = parseArm(arm);
+  if (kit) {
+    const file = stack.kit.slots[slot];
+    const job = `# Your job: one function\n\nThis service is already assembled from verified code: the routes, the database access, authentication and every other rule in the task are installed and working. That code is read-only and its contents are not shown. One function is left for you: the slot in \`${file}\`, shown in the project files below with its contract. Implement it so the service follows the task. Write only that file; changes to any other file are rejected.`;
+    return base === 'kit-tests' ? `${job}\n\n${publicTestsContext()}` : job;
+  }
   if (arm === 'bare') return '';
   if (arm === 'docs') {
     return `# Reference documentation\n\nDocumentation for the frameworks and libraries used in this project.\n\n${read(`arms/docs/${stack.name}.md`)}\n\n${read('arms/docs/_postgres.md')}`;
   }
   const piece = read('arms/openfabric/piece.md');
-  if (arm === 'tests') {
-    const tests = piece.split('## 3. Public tests')[1] || '';
-    return `# Automatic tests\n\nAfter every attempt, these public tests run against your app and you will see their results.${tests.replace('These run against your app after every attempt. Their values differ from the examples above on purpose.', '')}`;
-  }
+  if (arm === 'tests') return publicTestsContext();
   if (arm === 'of-spec') {
     return `# OpenFabric piece to implement\n\nThis project uses OpenFabric. Implement the task by following this verified piece. Its public tests run after every attempt.\n\n${piece}`;
   }
@@ -46,8 +78,15 @@ function armContext(stack, arm) {
   throw new Error(`unknown arm ${arm}`);
 }
 
+// Files of the reference that a kit arm installs, without the slot the model has to write.
+export function kitInstalledFiles(stack, arm) {
+  const { slot, kit } = parseArm(arm);
+  if (!kit) return [];
+  return listFiles(path.join(stack.dir, 'gold')).filter((f) => f !== stack.kit.slots[slot]);
+}
+
 export function buildMessages({ stack, arm, workspace, feedback, attempt, budget, history = [] }) {
-  const hidden = arm === 'of-code' ? stack.codePiece.hideFromPrompt || [] : [];
+  const hidden = arm === 'of-code' ? stack.codePiece.hideFromPrompt || [] : kitInstalledFiles(stack, arm);
   const snap = snapshot(workspace, { ignore: stack.snapshotIgnore || [], hidden });
   const readOnly = (stack.readOnly || []).join(', ');
   const system = [
