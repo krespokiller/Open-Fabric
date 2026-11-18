@@ -180,7 +180,7 @@ The plan is chosen with the smallest difference that matters. For a design of tw
 | 20 points | 10 | 200 | 78 to 93% | 76% |
 | 20 points, two looks | 6, then 12 | up to 240 | 84 to 96% | 83% |
 
-The table is printed by `node analysis/cli.mjs design` (100,000 seeded replicates per scenario). In every plan the rule supports a treatment with no effect at most 2.0% of the time and refutes a true difference of $d^*$ at most 2.4% of the time.
+The table is printed by `node analysis/cli.mjs design` (100,000 seeded replicates per scenario). In every plan the rule supports a treatment with no effect at most 2.0% of the time and refutes a true difference of $d^*$ less than 2.5% of the time. An independent simulator, written without the library, reproduced both rates.
 
 When the true difference is half of $d^*$, the verdict is `undecidable` in 33 to 47% of experiments. That is the rule working: the data cannot say.
 
@@ -198,7 +198,7 @@ A decision rule that the planned runs cannot support is not preregistered.
 
 - The estimate is total tokens over correct runs. It estimates the expected cost of obtaining one correct result by retrying; see [`model.md`](model.md).
 - The interval is $[c_L / p_U,\ c_U / p_L]$: bootstrap limits for the mean tokens per run, and exact limits for the proportion of correct runs.
-- **Zero correct runs** gives a one-sided statement, worded "at least". Today, writing the whole service from scratch with the 7B costs at least about 495,000 tokens per correct run (34 runs, 1.83 million tokens, none correct).
+- **Zero correct runs** gives a one-sided statement, worded "at least". Today, building the whole service with the 7B costs at least about 494,000 tokens per correct run (the 34 full-task runs of E01 and E03, 1.83 million tokens, none correct). The bound assumes a correct run costs about as much as a failed one; [`model.md`](model.md) says how it weakens if correct runs are much cheaper.
 - Two arms are compared on the log of the ratio. When one arm has no correct runs the comparison is one-sided, and a thesis that needs the ratio itself is `undecidable`.
 
 ### Gauge against judge
