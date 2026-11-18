@@ -157,8 +157,9 @@ export function makeCtx({ base, adminKey, webhookSecret, psp, prefix, signal }) 
 
 // Runs tests sequentially. Each test gets a fresh ctx prefix so data never collides.
 // A test that times out is aborted (its in-flight requests are cancelled) so it cannot
-// interfere with the next test.
-export async function runSuite(name, tests, makeTestCtx, { perTestTimeoutMs = 60000 } = {}) {
+// interfere with the next test. With stopAtFirstFailure the suite ends right after the first failing test and the
+// results hold only the tests that ran (the per-attempt judge needs one yes or no, not the full list).
+export async function runSuite(name, tests, makeTestCtx, { perTestTimeoutMs = 60000, stopAtFirstFailure = false } = {}) {
   const results = [];
   for (const t of tests) {
     const started = Date.now();
@@ -183,6 +184,7 @@ export async function runSuite(name, tests, makeTestCtx, { perTestTimeoutMs = 60
     }
     if (!pass && error?.startsWith('timed out')) await new Promise((r) => setTimeout(r, 2000));
     results.push({ suite: name, id: t.id, name: t.name, pass, error, ms: Date.now() - started });
+    if (!pass && stopAtFirstFailure) break;
   }
   return results;
 }

@@ -19,9 +19,11 @@ const armsInOrder = (present) => [
 ];
 const armRank = (a) => (ARM_ORDER.includes(a) ? String(ARM_ORDER.indexOf(a)).padStart(2, '0') : `99${slotKey(a)}`);
 // A run is correct only when it passes every test of both hidden suites. A run without the second suite is not correct.
-const bothSuitesPerfect = (r) => r.hiddenTotal > 0 && r.hiddenPassed === r.hiddenTotal && r.hidden2Total > 0 && r.hidden2Passed === r.hidden2Total;
+export const bothSuitesPerfect = (r) => r.hiddenTotal > 0 && r.hiddenPassed === r.hiddenTotal && r.hidden2Total > 0 && r.hidden2Passed === r.hidden2Total;
 // Every check the arm could see passed at the end of the run (the stop rule ends a run exactly then).
 const gaugePassed = (r) => r.stopReason === 'visible_checks_pass';
+// Results written before the per-attempt judgement have none of these fields; every use below leaves them empty then.
+const hasAttemptJudge = (r) => typeof r.firstAttemptCorrect === 'boolean';
 const slotOf = (r) => (/^kit-/.test(r.arm) ? r.arm.split('.')[1] || '' : '');
 
 const fmt = (n, d = 0) => (Number.isFinite(n) ? n.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d }) : '—');
@@ -67,6 +69,19 @@ function armRow(arm, rs) {
   return `| ${ARM_LABEL[arm] || arm} | ${rs.length} | ${pm(rates, 1)}% | ${rates2.length ? `${pm(rates2, 1)}%` : '—'} | ${perfect}/${rs.length} | ${pm(rs.map((r) => r.promptTokens))} | ${pm(rs.map((r) => r.completionTokens))} | ${pm(total)} | ${Number.isFinite(perPass) ? fmt(perPass) : 'no test passed'} | ${pm(rs.map((r) => r.calls), 1)} | ${pm(rs.map((r) => r.wallMs / 60000), 1)} |`;
 }
 
+// Calls held equal: every run scored at its first attempt, whatever the arm's stop rule did afterwards.
+function firstAttemptTable(rs) {
+  if (!rs.some(hasAttemptJudge)) return [];
+  const byArm = group(rs, (r) => r.arm);
+  const out = ['**Correct at the first attempt** (the hidden suites judged the state after attempt 1, so every arm is scored with the same number of calls; the model never sees this judgement)', '', '| Arm | Correct at the first attempt |', '| --- | --- |'];
+  for (const arm of armsInOrder(byArm)) {
+    const judged = byArm.get(arm).filter(hasAttemptJudge);
+    out.push(`| ${ARM_LABEL[arm] || arm} | ${judged.length ? `${judged.filter((r) => r.firstAttemptCorrect).length} of ${judged.length}` : '—'} |`);
+  }
+  out.push('');
+  return out;
+}
+
 const HEADER = '| Arm | Runs | Hidden tests passed | Second hidden suite passed | Runs passing both suites | Input tokens | Output tokens | Total tokens | Tokens per passed test | Model calls | Minutes |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |';
 
 export function writeReport(dir) {
@@ -82,7 +97,9 @@ export function writeReport(dir) {
   if (runs.some((r) => r.tokensEstimated)) lines.push('**Warning:** the model server did not report token usage for some calls; those counts are estimated as characters / 4.\n');
   const suspicious = runs.reduce((a, r) => a + (r.suspiciousUsageCalls || 0), 0);
   if (suspicious) lines.push(`**Warning:** in ${suspicious} call(s) the server reported fewer than half the prompt tokens expected from the prompt length. It may be counting only non-cached tokens or truncating the prompt; compare \`promptTokens\` and \`promptEstimate\` in \`metrics.json\` before publishing.\n`);
-  lines.push('**How to read it.** Every arm gets the same task, the same model, the same maximum number of calls and the same smoke-check feedback. A run stops when every check its arm can see passes, or when the budget runs out. The `tests` arm also sees the 8 public tests; the OpenFabric arms see them plus the piece, so `of-spec` versus `tests` isolates the value of the piece. All arms are judged by the same hidden HTTP suite on a fresh start; no model ever sees it. "Tokens per passed test" is total tokens divided by hidden tests passed, summed over runs. "Runs passing both suites" counts the runs that pass every test of both hidden suites. "Second hidden suite passed" comes from an independent suite (tests X01 onward) written from the task alone, without seeing the piece or the primary suite; it checks that the result does not depend on who wrote the judge.');
+  const disagreeing = runs.filter((r) => r.lastAttemptAgreesWithFinal === false).length;
+  if (disagreeing) lines.push(`**Warning:** in ${disagreeing} run(s) the hidden judge gave two different answers on the same code (the last attempt and the final judgement disagree). Check the instrument before using these numbers.\n`);
+  lines.push('**How to read it.** Every arm gets the same task, the same model, the same maximum number of calls and the same smoke-check feedback. A run stops when every check its arm can see passes, or when the budget runs out. The `tests` arm also sees the 8 public tests; the OpenFabric arms see them plus the piece, so `of-spec` versus `tests` isolates the value of the piece. All arms are judged by the same hidden HTTP suite on a fresh start; no model ever sees it. "Tokens per passed test" is total tokens divided by hidden tests passed, summed over runs. "Runs passing both suites" counts the runs that pass every test of both hidden suites. Both hidden suites also judge the state after every attempt, only to be recorded (never shown to the model): "Correct at the first attempt" counts the runs whose state after attempt 1 passes every test of both suites. The final judgement on a fresh build stays the primary metric. "Second hidden suite passed" comes from an independent suite (tests X01 onward) written from the task alone, without seeing the piece or the primary suite; it checks that the result does not depend on who wrote the judge.');
   lines.push('');
   if (runs.some((r) => r.arm === 'of-code')) {
     lines.push('**About of-code.** Its installed code is the same as the Next.js reference implementation that was validated against the hidden suite, so its pass rate measures how well the model mounts the piece and fills the slot, and is partly correct by construction.');
@@ -97,6 +114,7 @@ export function writeReport(dir) {
     const byArm = group(rs, (r) => r.arm);
     for (const arm of armsInOrder(byArm)) lines.push(armRow(arm, byArm.get(arm)));
     lines.push('');
+    lines.push(...firstAttemptTable(rs));
   }
 
   if (byStack.size > 1) {
@@ -187,10 +205,21 @@ export function writeReport(dir) {
   const file = path.join(dir, 'report.md');
   fs.writeFileSync(file, lines.join('\n'));
 
-  const csv = ['stack,arm,run,calls,prompt_tokens,completion_tokens,total_tokens,tokens_estimated,hidden_passed,hidden_total,stop_reason,built_final,wall_ms,model_ms,build_ms,hidden2_passed,hidden2_total,slot,gauge_pass,correct'];
+  const csv = ['stack,arm,run,calls,prompt_tokens,completion_tokens,total_tokens,tokens_estimated,hidden_passed,hidden_total,stop_reason,built_final,wall_ms,model_ms,build_ms,hidden2_passed,hidden2_total,slot,gauge_pass,correct,first_correct,first_correct_attempt,judge_agrees'];
   for (const r of runs) {
-    csv.push([r.stack, r.arm, r.run, r.calls, r.promptTokens, r.completionTokens, r.promptTokens + r.completionTokens, r.tokensEstimated, r.hiddenPassed, r.hiddenTotal, r.stopReason, r.builtFinal, r.wallMs, r.modelMs, r.buildMs, r.hidden2Passed ?? '', r.hidden2Total ?? '', slotOf(r), gaugePassed(r) ? 1 : 0, bothSuitesPerfect(r) ? 1 : 0].join(','));
+    csv.push([r.stack, r.arm, r.run, r.calls, r.promptTokens, r.completionTokens, r.promptTokens + r.completionTokens, r.tokensEstimated, r.hiddenPassed, r.hiddenTotal, r.stopReason, r.builtFinal, r.wallMs, r.modelMs, r.buildMs, r.hidden2Passed ?? '', r.hidden2Total ?? '', slotOf(r), gaugePassed(r) ? 1 : 0, bothSuitesPerfect(r) ? 1 : 0,
+      hasAttemptJudge(r) ? (r.firstAttemptCorrect ? 1 : 0) : '', r.firstCorrectAttempt ?? '', typeof r.lastAttemptAgreesWithFinal === 'boolean' ? (r.lastAttemptAgreesWithFinal ? 1 : 0) : ''].join(','));
   }
   fs.writeFileSync(path.join(dir, 'runs.csv'), csv.join('\n') + '\n');
+
+  // One row per attempt: what the arm could see (gauge) next to what the hidden judge said about the same state.
+  // Only counts and 0/1 flags: no hidden test id or name.
+  const attemptsCsv = ['stack,arm,slot,run,attempt,built,visible_passed,visible_total,gauge_pass,judge_correct,prompt_tokens,completion_tokens'];
+  for (const r of runs) {
+    for (const a of r.attempts || []) {
+      attemptsCsv.push([r.stack, r.arm, slotOf(r), r.run, a.attempt, a.built ? 1 : 0, a.visiblePassed, a.visibleTotal, a.built && a.visiblePassed === a.visibleTotal ? 1 : 0, typeof a.judgeCorrect === 'boolean' ? (a.judgeCorrect ? 1 : 0) : '', a.promptTokens, a.completionTokens].join(','));
+    }
+  }
+  fs.writeFileSync(path.join(dir, 'attempts.csv'), attemptsCsv.join('\n') + '\n');
   return file;
 }

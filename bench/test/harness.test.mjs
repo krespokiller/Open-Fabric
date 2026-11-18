@@ -154,7 +154,7 @@ test('a kit run with the second hidden suite missing is not counted as correct',
   assert.match(report, /\| django \| cart \| 1\/2 \|/);
 });
 
-test('runs.csv keeps its original columns in place and adds slot, gauge_pass and correct', () => {
+test('runs.csv keeps its original columns in place and adds slot, gauge_pass, correct and the per-attempt columns', () => {
   const dir = resultsDir([
     metrics('django', 'bare', 1),
     metrics('django', 'tests', 2, { stopReason: 'budget', hidden2Passed: 25 }),
@@ -165,7 +165,7 @@ test('runs.csv keeps its original columns in place and adds slot, gauge_pass and
   const { cols, rows } = csvRows(dir);
   const original = 'stack,arm,run,calls,prompt_tokens,completion_tokens,total_tokens,tokens_estimated,hidden_passed,hidden_total,stop_reason,built_final,wall_ms,model_ms,build_ms,hidden2_passed,hidden2_total'.split(',');
   assert.deepEqual(cols.slice(0, original.length), original);
-  assert.deepEqual(cols.slice(original.length), ['slot', 'gauge_pass', 'correct']);
+  assert.deepEqual(cols.slice(original.length), ['slot', 'gauge_pass', 'correct', 'first_correct', 'first_correct_attempt', 'judge_agrees']);
   const by = Object.fromEntries(rows.map((r) => [`${r.stack}/${r.arm}/${r.run}`, r]));
   assert.deepEqual([by['django/bare/1'].slot, by['django/bare/1'].gauge_pass, by['django/bare/1'].correct], ['', '1', '1']);
   assert.deepEqual([by['django/tests/2'].slot, by['django/tests/2'].gauge_pass, by['django/tests/2'].correct], ['', '0', '0']);

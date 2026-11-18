@@ -62,6 +62,31 @@ export function kitSelftestProblems({ stack, arm, runDir, metrics }) {
   return problems;
 }
 
+// The attempt at which the fake model sends the reference (null when it never does). It mirrors the server below:
+// attempt 1 carries the broken file when the stack has one, and `bare` gets its plausible bug from then on. In a kit
+// arm the broken file is installed code that the harness rejects, so the reference slot already works at attempt 1.
+export function referenceAttempt(stack, arm) {
+  if (String(arm).startsWith('kit-')) return 1;
+  if (arm === 'bare' && stack.selftestBug) return null;
+  return stack.selftestBreak ? 2 : 1;
+}
+
+// What the per-attempt hidden judgement must show in any finished cell of the selftest, as a list of problems.
+// The fake model's states are known, so the judge's answer on each is known: wrong until the reference arrives,
+// right at that attempt, and always wrong for a plausible bug. The last attempt must also agree with the final judgement.
+export function judgeSelftestProblems({ stack, arm, metrics }) {
+  const problems = [];
+  const attempts = metrics.attempts || [];
+  const reference = referenceAttempt(stack, arm);
+  for (const a of attempts) {
+    if (reference === null && a.judgeCorrect) problems.push(`attempt ${a.attempt} holds a plausible bug but the hidden judge called it correct`);
+    else if (reference !== null && a.attempt < reference && a.judgeCorrect) problems.push(`attempt ${a.attempt} came before the reference but the hidden judge called it correct`);
+    else if (reference !== null && a.attempt === reference && !a.judgeCorrect) problems.push(`attempt ${a.attempt} holds the reference but the hidden judge did not call it correct`);
+  }
+  if (metrics.lastAttemptAgreesWithFinal === false) problems.push('the hidden judge gave two different answers on the same code: the last attempt and the final judgement disagree');
+  return problems;
+}
+
 export async function startFakeModel() {
   let scenario = { stack: null, arm: null };
   const attempts = new Map();

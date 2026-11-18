@@ -13,13 +13,13 @@ import { DEFAULT_ARMS, armApplies, armSeesPublicTests, buildMessages, expandArm,
 import { chat } from './model.mjs';
 import { parseAnswer } from './protocol.mjs';
 import { startApp } from './runner.mjs';
-import { judge, suiteHashes, experimentHash } from './judge.mjs';
+import { NOT_JUDGED, judge, judgeAttempt, runLevelJudgement, suiteHashes, experimentHash } from './judge.mjs';
 import { startPsp } from './psp.mjs';
-import { writeReport } from './report.mjs';
+import { bothSuitesPerfect, writeReport } from './report.mjs';
 
 // One line per finished attempt. The loop is stateless, so without this the model cannot tell
 // that it is sending the same answer again or going back and forth between two answers.
-function historyLine({ attempt, applied, app, visible, repeated }) {
+export function historyLine({ attempt, applied, app, visible, repeated }) {
   const files = applied.written.length ? `wrote ${applied.written.length} file(s)` : 'wrote no files';
   let outcome;
   if (!app.ok) outcome = `${app.phase} failed (${String(app.reason).split('\n')[0].slice(0, 120)})`;
@@ -30,7 +30,7 @@ function historyLine({ attempt, applied, app, visible, repeated }) {
   return `- Attempt ${attempt}: ${files}; ${outcome}${repeated ? '; same answer as the attempt before' : ''}`;
 }
 
-function formatFeedback({ applied, parsed, app, visible, logs, repeated }) {
+export function formatFeedback({ applied, parsed, app, visible, logs, repeated }) {
   const out = [];
   if (repeated) out.push('WARNING: your previous answer was identical to the one before it, so the result did not change. Do not send the same files again: read the error below and change the code that causes it.');
   if (parsed.truncated) out.push(`WARNING: your answer ended inside the file "${parsed.truncated}". That file was not written. Write fewer or shorter files per answer.`);
@@ -100,11 +100,15 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
     metrics.buildMs += app.buildMs || 0;
     let visible = [];
     let logs = '';
+    let judgement = { ...NOT_JUDGED }; // an app that did not build or start has nothing to judge
     if (app.ok) {
       try {
         await app.psp.reset();
         visible = await judge(app.baseUrl, app.psp, visibleSuites);
         if (visible.some((r) => !r.pass)) logs = forModel(await app.logs());
+        // Only now, with the logs for the model already read, the hidden suites run. The result goes to metrics.json
+        // and nowhere else: nothing below hands `judgement` to the text the model reads.
+        judgement = await judgeAttempt(app);
       } finally {
         await app.stop();
       }
@@ -118,6 +122,7 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
       attempt, promptTokens: answer.promptTokens, completionTokens: answer.completionTokens, promptEstimate: answer.promptEstimate,
       finishReason: answer.finishReason, filesWritten: applied.written.length, rejected: applied.rejected.length,
       truncated: parsed.truncated, malformed: parsed.malformed.length, built: app.ok, visiblePassed: passed, visibleTotal: visible.length,
+      ...judgement,
     });
     process.stdout.write(`    attempt ${attempt}: ${answer.promptTokens}+${answer.completionTokens} tok, ${applied.written.length} files, ${app.ok ? `checks ${passed}/${visible.length}` : `${app.phase} failed`}\n`);
     if (app.ok && passed === visible.length) {
@@ -150,6 +155,7 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
   metrics.hiddenTotal = metrics.hidden.length;
   metrics.hidden2Passed = metrics.hidden2.filter((r) => r.pass).length;
   metrics.hidden2Total = metrics.hidden2.length;
+  Object.assign(metrics, runLevelJudgement(metrics.attempts, bothSuitesPerfect(metrics)));
   metrics.wallMs = Date.now() - started;
   // Keep the produced code, drop heavy build folders.
   for (const heavy of ['node_modules', '.next', 'vendor', 'target', '.venv', '__pycache__']) fs.rmSync(path.join(workspace, heavy), { recursive: true, force: true });
@@ -165,10 +171,12 @@ export async function runMatrix({ cmd, values, stacks, stamp }) {
   const selftest = cmd === 'selftest';
   let fake = null;
   let kitSelftestProblems = null;
+  let judgeSelftestProblems = null;
   if (selftest) {
     const fakeModel = await import('./fakemodel.mjs');
     fake = await fakeModel.startFakeModel();
     kitSelftestProblems = fakeModel.kitSelftestProblems;
+    judgeSelftestProblems = fakeModel.judgeSelftestProblems;
   }
   // The selftest also exercises one cell of each kit arm, so the slot path is covered without tokens.
   // Stacks without slots keep the selftest they had: the kit cells are added only where they can run.
@@ -253,6 +261,13 @@ export async function runMatrix({ cmd, values, stacks, stamp }) {
             console.log(`  !! ${kind} error, run not counted (it will be retried on resume): ${e.message.split('\n')[0]}`);
             if (kind === 'context' || kind === 'config') throw e;
           }
+          // Selftest only: every finished cell must show that the per-attempt hidden judge answered as the fake model's states require.
+          if (finished && judgeSelftestProblems) {
+            for (const problem of judgeSelftestProblems({ stack, arm, metrics: finished })) {
+              console.log(`  !! selftest: ${problem}`);
+              selftestProblems.push(`${name} / ${arm}: ${problem}`);
+            }
+          }
           // Selftest only: a finished kit cell must show that the slot rules held (see fakemodel.mjs).
           if (finished && kitSelftestProblems && parseArm(arm).kit) {
             for (const problem of kitSelftestProblems({ stack, arm, runDir, metrics: finished })) {
@@ -272,5 +287,5 @@ export async function runMatrix({ cmd, values, stacks, stamp }) {
       console.log(`\n${infraErrors.length} run(s) hit environment errors and were not counted. Fix the cause and re-run with --out ${outDir} to retry them.`);
     }
   }
-  if (selftestProblems.length) throw new Error(`the selftest found ${selftestProblems.length} problem(s) in the kit arms:\n- ${selftestProblems.join('\n- ')}`);
+  if (selftestProblems.length) throw new Error(`the selftest found ${selftestProblems.length} problem(s):\n- ${selftestProblems.join('\n- ')}`);
 }

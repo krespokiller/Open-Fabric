@@ -48,14 +48,48 @@ export function experimentHash(root = ROOT) {
   return h.digest('hex');
 }
 
-export async function judge(baseUrl, psp, suiteNames) {
+// With stopAtFirstFailure the judge ends at the first failing test of any suite: later suites do not run.
+export async function judge(baseUrl, psp, suiteNames, { stopAtFirstFailure = false } = {}) {
   const run = randomBytes(3).toString('hex').toUpperCase();
   const results = [];
   for (const name of suiteNames) {
     const r = await runSuite(name, SUITES[name], (testId, signal) =>
       makeCtx({ base: baseUrl, adminKey: SECRETS.ADMIN_KEY, webhookSecret: SECRETS.WEBHOOK_SECRET, psp, prefix: `T${run}${testId}`, signal }),
+      { stopAtFirstFailure },
     );
     results.push(...r);
+    if (stopAtFirstFailure && r.some((t) => !t.pass)) break;
   }
   return results;
+}
+
+// The hidden judgement of one attempt, recorded in metrics.json and never shown to the model. It runs on the app
+// instance the visible checks just used (the same order validate-gold runs, so the reference passes), after the
+// logs for the model were read. A missing app is a failed judgement that ran nothing.
+export const NOT_JUDGED = Object.freeze({ judgeCorrect: false, judgeTestsRun: 0, judgeFirstFail: null, judgeMs: 0 });
+
+export async function judgeAttempt(app) {
+  if (!app.ok) return { ...NOT_JUDGED };
+  const started = Date.now();
+  await app.psp.reset();
+  const results = await judge(app.baseUrl, app.psp, ['hidden', 'hidden2'], { stopAtFirstFailure: true });
+  const failed = results.find((r) => !r.pass);
+  return {
+    judgeCorrect: !failed,
+    judgeTestsRun: results.length,
+    judgeFirstFail: failed ? { suite: failed.suite, id: failed.id } : null,
+    judgeMs: Date.now() - started,
+  };
+}
+
+// Run-level view of the per-attempt judgement. `finalCorrect` is whether the final judgement (fresh build, empty
+// database, every test) passed every test of both hidden suites; the judge gave two answers on the same code when the
+// last attempt disagrees with it.
+export function runLevelJudgement(attempts, finalCorrect) {
+  const first = attempts.find((a) => a.judgeCorrect);
+  return {
+    firstAttemptCorrect: Boolean(attempts[0]?.judgeCorrect),
+    firstCorrectAttempt: first ? first.attempt : null,
+    lastAttemptAgreesWithFinal: attempts.length ? Boolean(attempts[attempts.length - 1].judgeCorrect) === Boolean(finalCorrect) : null,
+  };
 }
