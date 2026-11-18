@@ -489,6 +489,17 @@ describe('decide', () => {
     assert.equal(r.statistics.pooled.difference, 0);
   });
 
+  test('refutation is strict: an upper limit equal to d* is not below it, a hair above the limit is', () => {
+    const data = cells(2, fill(1), fill(1));
+    const upper = S.decide(data, plan50, { index: 1 }).statistics.upperLimit;
+    const atBoundary = S.decide(data, { ...plan50, dStar: upper }, { index: 1 });
+    assert.equal(atBoundary.statistics.upperLimit, upper);
+    assert.notEqual(atBoundary.verdict, 'refuted');
+    assert.equal(atBoundary.verdict, 'undecidable');
+    const justAbove = S.decide(data, { ...plan50, dStar: upper + 1e-9 }, { index: 1 });
+    assert.equal(justAbove.verdict, 'refuted');
+  });
+
   test('a large difference in both stacks is supported; p_S equals the brute force', () => {
     const xC = [[1, 0, 0, 0, 0], [0, 1, 0, 0, 0]];
     const data = cells(2, fill(2), xC);
@@ -682,6 +693,18 @@ describe('bootstrapMean', () => {
     near(r.lower, 14 / 40, 0.026);
     near(r.upper, 26 / 40, 0.026);
   });
+
+  test('the level picks the percentile: 95% is the 2.5% and 97.5% points, 90% the 5% and 95% points', () => {
+    // The mean is Bin(40, 0.5)/40 with steps of 1/40. P(X<=13)=0.0192 < 0.025 <= P(X<=14)=0.0403, so the
+    // 2.5% point is exactly 14/40; P(X<=14) < 0.05 <= P(X<=15)=0.0769, so the 5% point is exactly 15/40.
+    const values = Array(20).fill(0).concat(Array(20).fill(1));
+    const wide = S.bootstrapMean(values, 5, 20000, 0.95);
+    near(wide.lower, 14 / 40, 1e-9);
+    near(wide.upper, 26 / 40, 1e-9);
+    const narrow = S.bootstrapMean(values, 5, 20000, 0.9);
+    near(narrow.lower, 15 / 40, 1e-9);
+    near(narrow.upper, 25 / 40, 1e-9);
+  });
 });
 
 describe('costPerCorrect', () => {
@@ -719,6 +742,16 @@ describe('costPerCorrect', () => {
     assert.equal(r.upper, Infinity);
     assert.equal(r.wording, 'at least');
     near(r.lower, 50000 / (1 - 0.025 ** (1 / 34)), 1e-6);
+  });
+
+  test('exactly one failed run: m0 is the tokens of that run and the estimate still adds up', () => {
+    const runs = [run(100, true), run(200, true), run(300, true), run(400, true), run(7000, false)];
+    const r = S.costPerCorrect(runs, 3);
+    assert.equal(r.correct, 4);
+    assert.equal(r.m0, 7000);
+    assert.equal(r.m1, 250);
+    assert.equal(r.estimate, 8000 / 4);
+    near(r.m1 + (r.m0 * (1 - 0.8)) / 0.8, r.estimate, 1e-9);
   });
 
   test('all runs correct: finite limits, m0 is null', () => {

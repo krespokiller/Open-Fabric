@@ -32,8 +32,9 @@ node --test test/                                       # unit tests of the kit 
 node src/cli.mjs run --model <name> --stacks nextjs,django --runs 3 --budget 6
 node src/cli.mjs report results/<dir>
 
-# from analysis/
-node --test                                             # statistics tests
+# from the repository root
+node --test analysis/                                   # statistics tests
+node analysis/cli.mjs help                              # design tables and runs.csv analysis
 ```
 
 For harness work without Docker: `--runtime native --pg-admin-url postgres://...` (needs a local PostgreSQL; the app binds port 8080; Laravel has no native mode).

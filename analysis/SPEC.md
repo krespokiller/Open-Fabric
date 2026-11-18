@@ -48,7 +48,7 @@
 ## 5 Cost per correct run
 - Estimand: CPC=c/p=m1+m0(1-p)/p; c mean tokens per run, m1 and m0 means of correct and failed runs. Estimator: total tokens over correct runs.
 - Interval: [c_L/p_U, c_U/p_L]; c limits are the 2.5% and 97.5% percentiles of the seeded bootstrap mean (10,000 resamples of the arm's runs), p limits Clopper-Pearson at 97.5% one-sided each. Bonferroni keeps 95% under any dependence between tokens and success; the bootstrap limit is approximate at small n.
-- Zero correct runs: the same formula gives [c_L/p_U, infinity), worded "at least". Today (34 runs, 1,825,875 tokens, 0 correct): at least 495,000 tokens per correct run (reproduced: 494,641). Not used: 637,000 (ignores c), 598,000 (prior-dependent), 415,000 (did not reproduce).
+- Zero correct runs: the same formula gives [c_L/p_U, infinity), worded "at least". Today (34 runs, 1,825,875 tokens, 0 correct): at least 495,000 tokens per correct run (reproduced: 494,641). Note: the current CLI prints 494,601 for this arm; the difference of 40 tokens is bootstrap seed noise in the lower limit, and 494,601 is the current number. Not used: 637,000 (ignores c), 598,000 (prior-dependent), 415,000 (did not reproduce).
 - Between arms: log(CPC_T/CPC_C)=log(c_T/c_C)+log(p_C/p_T); one-sided only when an arm has zero correct runs.
 - Cross-checks, coverage simulation only: posterior with Bayesian bootstrap; log-linearization.
 
@@ -93,6 +93,8 @@ Test anchors (all reproduced): Fisher 10/25 vs 15/25, 0.2578; Newcombe 56/70 vs 
 | 30 | 3 then 6 (120) | 2.89/2.18 | 0.87/0.96/0.94 | 0.86 |
 | 20 | 10 (200) | 2.06 | 0.78/0.93/0.88 | 0.75 |
 | 20 | 6 then 12 (240) | 2.77/2.06 | 0.84/0.96/0.93 | 0.83 |
+
+Note: this table is from the 40,000-replicate run above. `README.md` is the current table, from 100,000 replicates (`cli.mjs design`), and prints 2.17 for the 40-run plan where this table has 2.44. z_R is the smallest grid value that keeps the worst false refutation at or below 2.5%, so with few runs it moves between replicate counts; the README value is current.
 
 - Worst false support 1.2-1.7%, worst false refutation 1.7-2.3%; two-look plans average 98 and 203 runs at D=0.
 - At d*/2: supported 25-29%, refuted 25-33%, undecidable 38-50%.

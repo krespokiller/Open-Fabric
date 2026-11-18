@@ -18,6 +18,8 @@ Commands
   analyze FILE...  Analyze one or more runs.csv ("-" reads standard input).
                    --treatment ARM --control ARM   compare two arms
                    --d-star POINTS --looks M[,M] --delta X | --z-r Z[,Z]   apply the decision rule
+                   --stacks A,B --slots X,Y,Z   the planned design: a planned stratum with no runs makes the
+                                   verdict undecidable (use --slots all for a file with no slot column)
                    --look N  --hash H --plan-hash H  --seed N  --resamples N (10000)
   coverage         Exact coverage of the Wilson, Clopper-Pearson and Newcombe intervals.
                    --sizes N[,N] (10,20,30,50)
@@ -31,7 +33,7 @@ Commands
 const OPTIONS = {
   sizes: [],
   design: ['reps', 'seed', 'stacks', 'slots', 'step', 'd-star', 'looks'],
-  analyze: ['treatment', 'control', 'd-star', 'looks', 'delta', 'z-r', 'look', 'hash', 'plan-hash', 'seed', 'resamples'],
+  analyze: ['treatment', 'control', 'd-star', 'looks', 'delta', 'z-r', 'look', 'hash', 'plan-hash', 'stacks', 'slots', 'seed', 'resamples'],
   coverage: ['sizes'],
   'cost-coverage': ['reps', 'resamples', 'seed'],
   'product-law': ['reps', 'seed'],
@@ -97,6 +99,14 @@ function dStarOf(options) {
   const fraction = value > 1 ? value / 100 : value;
   if (!(fraction > 0 && fraction <= 1)) throw new UsageError(`--d-star must be between 0 and 100 points, got "${options['d-star']}"`);
   return fraction;
+}
+
+// A list of names (stacks, slots), kept as text.
+function names(options, name) {
+  if (options[name] === undefined) return undefined;
+  const values = String(options[name]).split(',').map((v) => v.trim());
+  if (values.some((v) => v === '')) throw new UsageError(`--${name} needs names separated by commas, got "${options[name]}"`);
+  return values;
 }
 
 class UsageError extends Error {}
@@ -189,6 +199,7 @@ export function analyzeRuns(runs, options = {}) {
       perSlot: slots.length > 0 ? summary.perSlot : [],
       opposingSlots: slots.length > 0 ? summary.opposingSlots : [],
       pooled,
+      designPlanned: Boolean(plan?.stacks && plan?.slots),
       edge: pooled.xT + pooled.xC === 0 ? 'floor' : failures === 0 ? 'ceiling' : null,
       test: S.exactCmh(cells),
       contrasts: S.stackContrasts(summary.perStack),
@@ -250,6 +261,7 @@ function renderComparison(c) {
     out.push('No verdict: a verdict needs the preregistered plan (--d-star, --looks, and --delta or --z-r).');
   } else {
     out.push(`**Verdict: ${d.verdict}.** ${d.cause ? `Cause: ${d.cause}.` : 'No boundary crossed at this look; the plan continues.'}`);
+    if (!c.designPlanned) out.push('', 'The incomplete-block check was not applied: no planned design was given (--stacks and --slots), so a stack or slot with no runs is not detected.');
     const st = d.statistics;
     if (st) {
       out.push('', `Look ${st.look} of ${st.looks}, ${st.runsPerCell} runs per cell, ${st.runs} runs. d* = ${points(st.dStar)} points, a = ${st.alphaSpent}, z_R = ${st.zR.toFixed(2)}.`);
@@ -340,7 +352,13 @@ function planOf(options) {
   const looks = list(options, 'looks');
   const zR = list(options, 'z-r');
   const delta = number(options, 'delta', undefined);
-  if (looks === undefined && zR === undefined && delta === undefined) return { dStar, plan: null };
+  const stacks = names(options, 'stacks');
+  const slots = names(options, 'slots');
+  if ((stacks === undefined) !== (slots === undefined)) throw new UsageError('the planned design needs both --stacks and --slots');
+  if (looks === undefined && zR === undefined && delta === undefined) {
+    if (stacks !== undefined) throw new UsageError('--stacks and --slots belong to the decision rule, which needs --d-star, --looks, and --delta or --z-r');
+    return { dStar, plan: null };
+  }
   if (dStar === undefined || looks === undefined || (zR === undefined && delta === undefined)) {
     throw new UsageError('the decision rule needs --d-star, --looks, and --delta or --z-r');
   }
@@ -348,6 +366,7 @@ function planOf(options) {
   if (zR !== undefined) plan.zR = zR;
   else plan.delta = delta;
   if (options['plan-hash'] !== undefined) plan.hash = options['plan-hash'];
+  if (stacks !== undefined) Object.assign(plan, { stacks, slots });
   return { dStar, plan };
 }
 

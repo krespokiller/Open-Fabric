@@ -187,6 +187,54 @@ describe('analyze with a comparison', () => {
     assert.match(out, /false confidence/i);
   });
 
+  describe('the planned design and step 1 of the rule', () => {
+    const compare = ['analyze', '-', '--treatment', 'kit', '--control', 'bare', '--d-star', '50', '--looks', '3', '--delta', '0.3'];
+    const design = ['--stacks', 'django,nextjs', '--slots', 'cart,ledger'];
+    const withoutSlot = (slot) => syntheticCsv().split('\n').filter((line, i) => i === 0 || line.split(',')[2] !== slot).join('\n');
+
+    test('a complete planned design decides as before', async () => {
+      const { code, out, err } = await run([...compare, ...design], syntheticCsv());
+      assert.equal(code, 0, err);
+      assert.match(out, /Verdict: supported/);
+      assert.doesNotMatch(out, /incomplete-block check was not applied/);
+    });
+
+    test('a planned slot missing from every stack is undecidable, whatever the other cells say', async () => {
+      const csv = withoutSlot('ledger');
+      const unplanned = await run(compare, csv);
+      assert.doesNotMatch(unplanned.out, /incomplete block/);
+      assert.match(unplanned.out, /incomplete-block check was not applied/);
+      const planned = await run([...compare, ...design], csv);
+      assert.equal(planned.code, 0, planned.err);
+      assert.match(planned.out, /Verdict: undecidable/);
+      assert.match(planned.out, /broken instrument: incomplete block \(no runs for django \/ ledger\)/);
+    });
+
+    test('a planned stack with no runs is undecidable; a cell outside the plan is too', async () => {
+      const extra = await run([...compare, '--stacks', 'django,nextjs,rails', '--slots', 'cart,ledger'], syntheticCsv());
+      assert.match(extra.out, /Verdict: undecidable/);
+      assert.match(extra.out, /no runs for rails \/ cart/);
+      const fewer = await run([...compare, '--stacks', 'django', '--slots', 'cart,ledger'], syntheticCsv());
+      assert.match(fewer.out, /Verdict: undecidable/);
+      assert.match(fewer.out, /outside the plan/);
+    });
+
+    test('without a planned design the output says the incomplete-block check was not applied', async () => {
+      const { out } = await run(compare, syntheticCsv());
+      assert.match(out, /incomplete-block check was not applied/);
+      assert.match(out, /--stacks and --slots/);
+    });
+
+    test('--stacks and --slots come together and need the decision rule', async () => {
+      const onlyStacks = await run([...compare, '--stacks', 'django,nextjs'], syntheticCsv());
+      assert.equal(onlyStacks.code, 1);
+      assert.match(onlyStacks.err, /--stacks and --slots/);
+      const noRule = await run(['analyze', '-', '--treatment', 'kit', '--control', 'bare', ...design], syntheticCsv());
+      assert.equal(noRule.code, 1);
+      assert.match(noRule.err, /decision rule/);
+    });
+  });
+
   async function run(args, stdin) {
     let out = '';
     let err = '';
