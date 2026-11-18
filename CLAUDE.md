@@ -20,7 +20,7 @@ There is no product code. Do not write any until a gate in the decision map is m
 
 ## bench/ in one paragraph
 
-Every arm gets the same task (`bench/task/task.md`, a checkout service) in one of four stacks (`bench/stacks/{nextjs,django,spring,laravel}`). The full-task arms (`bare`, `docs`, `tests`, `of-spec`, `of-code`) build the service from the skeleton. The kit arms (`kit-bare`, `kit-tests`) install the reference service and let the model write one slot (one business rule) per run; they exist for Next.js and Django. A run is a loop of model calls with build and test feedback. At the end, the hidden suite `bench/suites/hidden.mjs` (21 black-box HTTP tests) and `bench/suites/hidden2.mjs` (26 tests, written independently from `task.md` only) judge it. See [`docs/architecture.md`](docs/architecture.md).
+Every arm gets the same task (`bench/task/task.md`, a checkout service) in one of four stacks (`bench/stacks/{nextjs,django,spring,laravel}`). The full-task arms (`bare`, `docs`, `tests`, `of-spec`, `of-code`) build the service from the skeleton. The kit arms (`kit-bare`, `kit-tests`) install the reference service and let the model write one slot (one business rule) per run; they exist for Next.js and Django. A run is a loop of model calls with build and test feedback. At the end, the hidden suite `bench/suites/hidden.mjs` (21 black-box HTTP tests) and `bench/suites/hidden2.mjs` (26 tests, written independently from `task.md` only) judge it. Since 2026-11-18 both hidden suites also judge every attempt that builds and starts, and the model never sees that result. See [`docs/architecture.md`](docs/architecture.md).
 
 ## Commands
 
@@ -28,7 +28,7 @@ Every arm gets the same task (`bench/task/task.md`, a checkout service) in one o
 # from bench/
 node src/cli.mjs validate-gold --stacks nextjs,django   # references must pass 59/59 per stack (Docker)
 node src/cli.mjs selftest --stacks nextjs,django        # whole loop with a fake model, no tokens
-node --test "test/*.test.mjs"                           # unit tests of the harness (33), no Docker, no model
+node --test "test/*.test.mjs"                           # unit tests of the harness (56), no Docker, no model
 node src/cli.mjs run --model <name> --stacks nextjs,django --runs 3 --budget 6
 node src/cli.mjs report results/<dir>
 

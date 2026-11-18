@@ -1,6 +1,6 @@
 # E04: Gauge at slot level
 
-**Designed, revised on 2026-11-18, not preregistered, not run.** The tool installs the whole reference service and leaves one slot: a pure function with one business rule. The model writes only that function, with or without the gauge in view. On 2026-11-18 the assistant revised the criteria of T11, T12 and T13 so that the planned runs can detect them (section 1). The four instrument problems listed before are closed (section 7). The preregistration is still blocked by three things: the owner has not confirmed the criteria, the instrument does not yet record the judge result of each attempt, and the exploratory campaign has not run. The owner's standing instruction of 2026-11-17 is to start testing the theses once the path is clear.
+**Designed, revised on 2026-11-18, not preregistered, not run.** The tool installs the whole reference service and leaves one slot: a pure function with one business rule. The model writes only that function, with or without the gauge in view. On 2026-11-18 the assistant revised the criteria of T11, T12 and T13 so that the planned runs can detect them (section 1). The four instrument problems listed before are closed (section 7). The preregistration is still blocked by two things: the owner has not confirmed the criteria, and the exploratory campaign, which started on 2026-11-18, has not finished. The instrument records the judge result of each attempt since 2026-11-18. The owner's standing instruction of 2026-11-17 is to start testing the theses once the path is clear.
 
 | Field | Value |
 | --- | --- |
@@ -44,7 +44,7 @@ Since everything outside the slot is the reference, any hidden test that fails i
 | Runs per cell | Fixed at preregistration from the plan table in [`analysis/README.md`](../../analysis/README.md): 5 per cell in one look (100 runs), or 3 then 6 per cell in two looks (120 runs at most). Cells are arm by slot by stack: 20 cells. The choice is made after the exploratory campaign measures the time per run |
 | Call budget | 6, as in [E01](../E01-pilot-full-task/README.md) and [E03](../E03-exploratory-loop-fixes/README.md). The arms stop at different points on purpose: the gauge loop (keep working while a visible check fails) is part of the treatment, and this record says so |
 | Primary metric | Correct run: every test of `hidden` and of `hidden2` passes |
-| Secondary metrics | Calls and tokens per arm; runs that pass every visible check and fail a hidden test. The first-attempt comparison at equal calls (the rule "calls held equal" of [`docs/method.md`](../../docs/method.md)) is reported as a secondary result once the instrument records per-attempt judge results |
+| Secondary metrics | Calls and tokens per arm; runs that pass every visible check and fail a hidden test. The first-attempt comparison at equal calls (the rule "calls held equal" of [`docs/method.md`](../../docs/method.md)) is available as a secondary result, since 2026-11-18, when the instrument records per-attempt judge results. `analyze` prints "At the first attempt (calls held equal)" for two arms |
 | Installed code | Read-only, and left out of the prompt |
 
 | Arm | What the model gets | Feedback after each attempt | Stops when |
@@ -61,10 +61,11 @@ Since everything outside the slot is the reference, any hidden test that fails i
 - The piece no longer shares amounts with a hidden test, and a unit test guards it (item 8).
 - The report and `runs.csv` count a correct run over both hidden suites (item 9).
 - A resume with another slot list is refused.
+- Every attempt that builds and starts is judged by both hidden suites, without the model seeing the result (item 10).
 - In a kit run, build output and app logs lose the lines that quote installed files (`kitFeedbackText` in `bench/src/prompts.mjs`), because a code frame of an installed file would show the model code it cannot edit.
-- `bench/test/` holds 33 unit tests; the command is `node --test "test/*.test.mjs"` from `bench/`.
+- `bench/test/` holds 56 unit tests; the command is `node --test "test/*.test.mjs"` from `bench/`.
 
-`validate-gold` passed 59 of 59 on Next.js and Django three times in a row. The kit arms have not been used in a run yet. One instrument item is open and next: the judge result of each attempt (item 10).
+`validate-gold` passed 59 of 59 on Next.js and Django three times in a row. The exploratory campaign of the kit arms started on 2026-11-18; its results are not known yet. No instrument item is open: the judge result of each attempt is recorded (item 10, closed).
 
 ## 3. Controls and the exploratory run
 
@@ -74,7 +75,7 @@ Since everything outside the slot is the reference, any hidden test that fails i
 | Empty | Done on 2026-11-11. Table below |
 | Can it fail | Open. It depends on the exploratory campaign |
 | Denominator | Written in the revised criteria of 2026-11-18. T13 is `undecidable` when either arm has no correct run, and T12 is "not estimable" when no run passes the gauge |
-| Exploratory campaign | Pending. 1 run per cell, 20 runs, 10 per arm (the method asks for at least five per arm). See below |
+| Exploratory campaign | Started on 2026-11-18. 1 run per cell, 20 runs, 10 per arm (the method asks for at least five per arm). Results not known yet. See below |
 
 ### Unfilled-slot control
 
@@ -117,8 +118,8 @@ None. Nothing is preregistered.
 
 These are the limits written with the design in `docs/context.md`.
 
-- **The arms do not get the same number of calls, on purpose.** `kit-bare` stops when its 4 checks pass and `kit-tests` continues until 12 pass. The loop is part of the treatment. Calls and tokens are reported per arm. The comparison with every arm scored at its first attempt needs the judge result of each attempt, which the instrument does not record yet (item 10).
-- **The gauge can be measured only at the end of a run.** The hidden suites run once, on the final state. Sensitivity and specificity of the gauge, and false confidence per attempt, cannot be estimated until item 10 is done. T12 is read from final states.
+- **The arms do not get the same number of calls, on purpose.** `kit-bare` stops when its 4 checks pass and `kit-tests` continues until 12 pass. The loop is part of the treatment. Calls and tokens are reported per arm. The comparison with every arm scored at its first attempt uses the judge result of each attempt, which the instrument records since 2026-11-18 (item 10).
+- **The gauge can be measured per attempt since 2026-11-18.** The hidden suites run after every attempt that builds and starts (item 10), so sensitivity and specificity of the gauge per attempt can be estimated. T12 itself is still read from final states.
 - **Small samples in the secondary theses.** T12 rests on the discount cell, about 10 to 12 runs. T13 depends on both arms having correct runs.
 - **Information and feedback are not separated.** `kit-tests` receives the description of the tests and also their results.
 - **The strongest objection is not tested.** There is no arm where the model writes its own tests. That is [E07](../E07-independent-gauge/README.md).
@@ -136,7 +137,7 @@ State on 2026-11-18. Closed items stay in the table with the date and how they w
 | # | Item | State |
 | --- | --- | --- |
 | 1 | **Revise the T11 criterion.** The earlier one asked for 20 points with 25 runs per arm in each stack. The table in [`docs/method.md`](../../docs/method.md) says 25 runs per arm detect about 39 points, and 50 per arm (both stacks pooled) about 28. A 20-point difference needs 62 to 97 runs per arm. `docs/method.md` does not allow preregistering a criterion the runs cannot detect | Answered by the revision of 2026-11-18 (section 1): d* of 30 points, stratified exact test, 100 or 120 runs. Awaits the owner's confirmation |
-| 2 | **Run the exploratory campaign.** If `kit-bare` is already near 100%, or both arms are near 0%, the design cannot discriminate and is redesigned before the tag | Open. The redesign rule is written above. Waits for item 10 |
+| 2 | **Run the exploratory campaign.** If `kit-bare` is already near 100%, or both arms are near 0%, the design cannot discriminate and is redesigned before the tag | Started on 2026-11-18. Results not known yet. The redesign rule is written above |
 | 3 | Fix the call budget. It was not written, and the arms stop at different points | Settled as proposed on 2026-11-18: 6 calls. The different stopping points are part of the treatment |
 | 4 | Define T13 when `kit-tests` has no correct runs | Settled as proposed on 2026-11-18: T13 is a ratio of tokens per correct run, and `undecidable` when either arm has none |
 | 5 | Look at the sample behind T12. It rests on the discount cell alone, and "at least half" of 5 runs has a very wide interval | Answered by the T12 rule of 2026-11-18: a Clopper-Pearson interval against 0.5, `undecidable` when it straddles it, and said in advance to be often so |
@@ -144,7 +145,7 @@ State on 2026-11-18. Closed items stay in the table with the date and how they w
 | 7 | **The harness hash skips the gold reference.** The kit arms install the reference and the judge scores it | Closed on 2026-11-18. `experimentHash` in `bench/src/judge.mjs` includes `stacks/*/gold` and hashes text files with CRLF turned into LF. Results directories created before this change refuse to resume |
 | 8 | **The piece shares example values with one hidden test.** It does not change this experiment's arms, but it is an open instrument problem recorded in [E01](../E01-pilot-full-task/README.md#6-limits) and [E05](../E05-line-vs-workshop/README.md#6-limits) | Closed on 2026-11-18. The two example rows of `bench/arms/openfabric/piece.md` that shared amounts with one test of `hidden2` use other amounts. `bench/test/arms-leak.test.mjs` fails if any amount asserted by a hidden suite appears in a file under `bench/arms/` |
 | 9 | **The harness report counts "fully correct" on one hidden suite** | Closed on 2026-11-18. `bench/src/report.mjs` counts a run as correct only when it passes every test of both hidden suites. The column is "Runs passing both suites", and `runs.csv` has the new columns `slot`, `gauge_pass` and `correct` |
-| 10 | **Per-attempt judge results.** The hidden suites run only at the end of a run. Without them no arm can be scored at its first attempt, and the sensitivity and specificity of the gauge cannot be estimated | Open, and next. It comes before the exploratory campaign |
+| 10 | **Per-attempt judge results.** The hidden suites ran only at the end of a run. Without them no arm could be scored at its first attempt, and the sensitivity and specificity of the gauge could not be estimated | Closed on 2026-11-18. Both hidden suites run after every attempt that builds and starts, on the same app instance, and the result goes to `metrics.json` only. `runs.csv` gained `first_correct`, `first_correct_attempt` and `judge_agrees`, and `attempts.csv` has one row per attempt |
 
 Item 6 of the earlier list, "finish and commit the harness changes", was closed earlier: the work is committed (see the harness state above).
 
