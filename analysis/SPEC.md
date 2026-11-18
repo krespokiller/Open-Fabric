@@ -57,7 +57,7 @@
 - Sensitivity=d/(b+d); specificity=a/(a+c); false confidence=b/(a+b).
 - Counts with Wilson and Clopper-Pearson, per arm and slot, never pooled across arms; empty denominator: "not estimable".
 - "At least half" needs a Clopper-Pearson lower limit of 0.5 (9 of 10).
-- The loop stops when the gauge passes, so final-state tables support only false confidence; sensitivity and specificity need per-attempt gauge and judge results, bootstrapped by run.
+- The loop stops when the gauge passes, so final-state tables support only false confidence; sensitivity and specificity need per-attempt gauge and judge results, bootstrapped by run. Per-attempt tables are now computed from `attempts.csv` (`attemptGaugeTable`), with percentile bootstrap intervals that resample whole runs.
 
 ## 7 Model of the claim
 - Cost: log(CPC_W/CPC_L)=log(c_W/c_L)+log(p_L/p_W), structural plus retry (W workshop, L line). Prediction: the retry term shrinks with stronger models, the structural term stays (E05).
@@ -75,6 +75,9 @@
 - `calibrate(plan,grid,reps,seed)`: z_R per look, plan table
 - `costPerCorrect(runs,seed)`: estimate, limits, m1, m0
 - `gaugeTable(runs)`: cells, three rates with intervals
+- `readAttempts(csv)`: attempts with stack, arm, slot, run, attempt, built, gaugePass, judgeCorrect, tokens
+- `attemptGaugeTable(attempts,{seed,resamples})`: per-attempt cells, three rates with bootstrap-by-run intervals, unjudged count
+- `firstAttemptCells(runs,t,c)`: cells with every run scored at its first attempt, or null when a run has no result
 - `posteriorDifference(cells,dStar)`: P(D>0), P(D>=d*)
 - `productLaw(q,xAll,nAll)`: R with interval
 - `gaugeLoop(pi,se,sp,budget)`: gauge pass rate, false confidence, attempts

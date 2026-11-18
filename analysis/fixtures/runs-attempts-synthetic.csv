@@ -1,0 +1,13 @@
+stack,arm,slot,run,total_tokens,hidden_passed,hidden_total,gauge_pass,first_correct,first_correct_attempt,judge_agrees
+nextjs,kit-bare.cart,cart,1,450,21,21,1,0,3,1
+nextjs,kit-bare.cart,cart,2,150,20,21,1,0,,1
+nextjs,kit-bare.cart,cart,3,150,21,21,1,1,1,1
+nextjs,kit-bare.ledger,ledger,1,450,19,21,0,0,,1
+nextjs,kit-bare.ledger,ledger,2,300,21,21,1,1,1,1
+nextjs,kit-bare.ledger,ledger,3,150,21,21,1,1,1,1
+nextjs,kit-tests.cart,cart,1,150,21,21,1,1,1,1
+nextjs,kit-tests.cart,cart,2,150,21,21,1,1,1,1
+nextjs,kit-tests.cart,cart,3,150,21,21,1,1,1,1
+nextjs,kit-tests.ledger,ledger,1,150,21,21,1,1,1,1
+nextjs,kit-tests.ledger,ledger,2,450,18,21,0,0,,1
+nextjs,kit-tests.ledger,ledger,3,150,20,21,1,0,,1

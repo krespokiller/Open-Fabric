@@ -2,6 +2,7 @@
 // code under test: a closed form, a published table value, or brute-force enumeration.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import * as S from './stats.mjs';
 
 const Z95 = 1.959963984540054;
@@ -938,7 +939,7 @@ describe('readRuns', () => {
       {
         arm: 'bare', stack: 'django', slot: null, seed: null, run: 1, correct: false, gaugePass: null,
         tokens: 51718, tokensIn: 37659, tokensOut: 14059, calls: 6, hiddenPassed: 0, hiddenTotal: 47,
-        hiddenFraction: 0, raw: undefined,
+        hiddenFraction: 0, firstCorrect: null, firstCorrectAttempt: null, judgeAgrees: null, raw: undefined,
       },
     );
     assert.equal(runs[1].correct, true);
@@ -1248,5 +1249,235 @@ describe('edge cases with closed-form references: n of 1, unequal arms, empty st
 
   test('zero successes and all successes: the one-sided bound is the closed form 1 - 0.05^(1/n)', () => {
     for (const n of [1, 2, 10, 34, 100]) near(S.zeroSuccessBound(n), 1 - 0.05 ** (1 / n), 1e-12);
+  });
+});
+
+// ---- per-attempt results: fixtures built by hand, every number checked by hand ----
+
+const readFixture = (name) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
+
+describe('readRuns, first attempt and judge columns (A1)', () => {
+  const header = 'stack,arm,slot,total_tokens,hidden_passed,hidden_total,first_correct,first_correct_attempt,judge_agrees';
+
+  test('reads first_correct, first_correct_attempt and judge_agrees; an empty field is null', () => {
+    const csv = [
+      header,
+      'django,kit-bare.cart,cart,10,21,21,1,1,1',
+      'django,kit-bare.cart,cart,10,20,21,0,,0',
+      'django,kit-bare.cart,cart,10,20,21,,,',
+    ].join('\n');
+    const runs = S.readRuns(csv);
+    assert.deepEqual(runs.map((r) => [r.firstCorrect, r.firstCorrectAttempt, r.judgeAgrees]), [[true, 1, true], [false, null, false], [null, null, null]]);
+    assert.deepEqual(runs.map((r) => r.correct), [true, false, false]);
+  });
+
+  test('a file without the columns gives null, and the other fields are unchanged', () => {
+    const runs = S.readRuns('stack,arm,total_tokens,hidden_passed,hidden_total\ndjango,bare,5,21,21');
+    assert.deepEqual([runs[0].firstCorrect, runs[0].firstCorrectAttempt, runs[0].judgeAgrees], [null, null, null]);
+    assert.equal(runs[0].correct, true);
+    assert.equal(runs[0].arm, 'bare');
+  });
+
+  test('the runs fixture reads as written', () => {
+    const runs = S.readRuns(readFixture('runs-attempts-synthetic.csv'));
+    assert.equal(runs.length, 12);
+    assert.deepEqual(runs.slice(0, 3).map((r) => [r.arm, r.slot, r.firstCorrect, r.firstCorrectAttempt]), [['kit-bare', 'cart', false, 3], ['kit-bare', 'cart', false, null], ['kit-bare', 'cart', true, 1]]);
+    assert.ok(runs.every((r) => r.judgeAgrees === true));
+  });
+});
+
+describe('readAttempts (A2)', () => {
+  test('reads one object per attempt and normalizes a kit arm exactly as readRuns does', () => {
+    const attempts = S.readAttempts(readFixture('attempts-synthetic.csv'));
+    assert.equal(attempts.length, 19);
+    assert.deepEqual(attempts[0], {
+      stack: 'nextjs', arm: 'kit-bare', slot: 'cart', run: 1, attempt: 1, built: true, gaugePass: false, judgeCorrect: false, tokensIn: 100, tokensOut: 50,
+    });
+    assert.equal(attempts[2].gaugePass, true);
+    assert.equal(attempts[2].judgeCorrect, true);
+    // The same names as the runs file gives for the same rows.
+    const runArms = new Set(S.readRuns(readFixture('runs-attempts-synthetic.csv')).map((r) => `${r.arm}/${r.slot}`));
+    assert.deepEqual(new Set(attempts.map((a) => `${a.arm}/${a.slot}`)), runArms);
+  });
+
+  test('a full-task arm has an empty slot, kept as null, and its name is untouched; old results have no judge result', () => {
+    const csv = [
+      'stack,arm,slot,run,attempt,built,visible_passed,visible_total,gauge_pass,judge_correct,prompt_tokens,completion_tokens',
+      'django,bare,,1,1,0,0,0,0,,10,5',
+      'django,v1.cart,,1,1,1,3,3,1,1,10,5',
+    ].join('\r\n');
+    const attempts = S.readAttempts(csv);
+    assert.deepEqual(attempts.map((a) => [a.arm, a.slot, a.built, a.gaugePass, a.judgeCorrect]), [['bare', null, false, false, null], ['v1.cart', null, true, true, true]]);
+  });
+
+  test('missing required columns are an error that names them; an empty file gives no attempts', () => {
+    assert.throws(() => S.readAttempts('stack,arm,run\nd,a,1'), /attempts\.csv is missing the column\(s\): attempt, gauge_pass, judge_correct/);
+    assert.deepEqual(S.readAttempts(''), []);
+  });
+});
+
+describe('attemptGaugeTable (A3)', () => {
+  const attempts = S.readAttempts(readFixture('attempts-synthetic.csv'));
+  const ofArm = (arm) => attempts.filter((a) => a.arm === arm);
+  const opts = { seed: 7, resamples: 2000 };
+  const attempt = (run, g, j, i = 1) => ({ stack: 's', arm: 'x', slot: null, run, attempt: i, built: true, gaugePass: g === 1, judgeCorrect: j === 1, tokensIn: 1, tokensOut: 1 });
+
+  test('kit-bare: the four cells and three rates, by hand', () => {
+    // Pairs (gauge, judge) of the 11 kit-bare attempts, cart then ledger:
+    //   cart run 1 (0,0) (0,0) (1,1); run 2 (1,0); run 3 (1,1); ledger run 1 (0,0) x3; run 2 (0,1) (1,1); run 3 (1,1).
+    //   a = gauge passes, judge correct = 4 (cart 1, cart 3, ledger 2 last, ledger 3). b = gauge passes, judge incorrect = 1 (cart 2).
+    //   c = gauge fails, judge correct = 1 (ledger 2 first). d = both fail = 2 + 3 = 5.
+    //   Sensitivity d/(b+d) = 5/6; specificity a/(a+c) = 4/5; false confidence b/(a+b) = 1/5.
+    const t = S.attemptGaugeTable(ofArm('kit-bare'), opts);
+    assert.deepEqual([t.a, t.b, t.c, t.d, t.n, t.unjudged], [4, 1, 1, 5, 11, 0]);
+    assert.deepEqual([t.attempts, t.runs], [11, 6]);
+    assert.deepEqual([t.sensitivity.x, t.sensitivity.n], [5, 6]);
+    assert.deepEqual([t.specificity.x, t.specificity.n], [4, 5]);
+    assert.deepEqual([t.falseConfidence.x, t.falseConfidence.n], [1, 5]);
+    near(t.sensitivity.estimate, 5 / 6, 1e-12);
+    near(t.specificity.estimate, 4 / 5, 1e-12);
+    near(t.falseConfidence.estimate, 1 / 5, 1e-12);
+    for (const r of [t.sensitivity, t.specificity, t.falseConfidence]) {
+      assert.equal(r.estimable, true);
+      assert.ok(r.lower >= 0 && r.upper <= 1 && r.lower <= r.upper, `${r.lower} ${r.upper}`);
+    }
+  });
+
+  test('kit-tests: a perfect specificity, and a rate that is not estimable on a subset', () => {
+    // kit-tests: a = 4 (cart x3, ledger 1), b = 1 (ledger 3), c = 0, d = 3 (ledger 2, three attempts).
+    const t = S.attemptGaugeTable(ofArm('kit-tests'), opts);
+    assert.deepEqual([t.a, t.b, t.c, t.d, t.n], [4, 1, 0, 3, 8]);
+    near(t.sensitivity.estimate, 3 / 4, 1e-12);
+    near(t.specificity.estimate, 1, 1e-12);
+    // Only ledger run 2 of kit-tests: three attempts (0,0): d = 3 and a = b = c = 0,
+    // so specificity a/(a+c) and false confidence b/(a+b) have an empty denominator.
+    const only = S.attemptGaugeTable(ofArm('kit-tests').filter((a) => a.slot === 'ledger' && a.run === 2), opts);
+    assert.deepEqual([only.a, only.b, only.c, only.d], [0, 0, 0, 3]);
+    assert.equal(only.sensitivity.estimable, true);
+    for (const r of [only.specificity, only.falseConfidence]) {
+      assert.equal(r.estimable, false);
+      assert.deepEqual([r.estimate, r.lower, r.upper], [null, null, null]);
+    }
+  });
+
+  test('attempts with no judge result are left out and counted', () => {
+    const bare = ofArm('kit-bare');
+    const mixed = [...bare, { ...bare[0], run: 99, judgeCorrect: null }, { ...bare[1], run: 99, judgeCorrect: null }];
+    const t = S.attemptGaugeTable(mixed, opts);
+    assert.equal(t.unjudged, 2);
+    assert.deepEqual([t.a, t.b, t.c, t.d, t.n], [4, 1, 1, 5, 11]);
+    assert.equal(t.runs, 6);
+  });
+
+  test('an empty set gives an empty table with nothing estimable', () => {
+    const t = S.attemptGaugeTable([], opts);
+    assert.deepEqual([t.a, t.b, t.c, t.d, t.n, t.runs, t.unjudged], [0, 0, 0, 0, 0, 0, 0]);
+    assert.equal(t.sensitivity.estimable, false);
+  });
+
+  test('the same seed gives the same output, and the limits are the order statistics of the repository generator', () => {
+    const first = S.attemptGaugeTable(ofArm('kit-bare'), { seed: 11, resamples: 3000 });
+    const second = S.attemptGaugeTable(ofArm('kit-bare'), { seed: 11, resamples: 3000 });
+    assert.deepEqual(first, second);
+    // Independent replay: draw 6 runs per resample with S.rng (one draw per run), keep the replicates whose denominator is positive,
+    // take the k-th smallest and k-th largest with k = floor(0.025 (replicates + 1)).
+    const byRun = new Map();
+    for (const a of ofArm('kit-bare')) {
+      const key = `${a.slot}/${a.run}`;
+      if (!byRun.has(key)) byRun.set(key, { a: 0, b: 0, c: 0, d: 0 });
+      byRun.get(key)[a.gaugePass ? (a.judgeCorrect ? 'a' : 'b') : (a.judgeCorrect ? 'c' : 'd')]++;
+    }
+    const clusters = [...byRun.values()];
+    const next = S.rng(11);
+    const fc = [];
+    for (let i = 0; i < 3000; i++) {
+      const s = { a: 0, b: 0 };
+      for (let j = 0; j < clusters.length; j++) {
+        const c = clusters[Math.floor(next() * clusters.length)];
+        s.a += c.a;
+        s.b += c.b;
+      }
+      if (s.a + s.b > 0) fc.push(s.b / (s.a + s.b));
+    }
+    fc.sort((x, y) => x - y);
+    const k = Math.floor(0.025 * (fc.length + 1));
+    near(first.falseConfidence.lower, fc[k - 1], 1e-12, 'false confidence lower');
+    near(first.falseConfidence.upper, fc[fc.length - k], 1e-12, 'false confidence upper');
+    assert.equal(first.falseConfidence.skipped, 3000 - fc.length);
+  });
+
+  test('another seed moves the limits of a table with spread', () => {
+    const wide = [];
+    for (let run = 1; run <= 12; run++) {
+      const pairs = run % 3 === 0 ? [[1, 0]] : run % 3 === 1 ? [[0, 0], [1, 1]] : [[1, 1]];
+      pairs.forEach(([g, j], i) => wide.push(attempt(run, g, j, i + 1)));
+    }
+    const one = S.attemptGaugeTable(wide, { seed: 1, resamples: 400 });
+    const two = S.attemptGaugeTable(wide, { seed: 2, resamples: 400 });
+    assert.notDeepEqual([one.falseConfidence.lower, one.falseConfidence.upper, one.sensitivity.lower], [two.falseConfidence.lower, two.falseConfidence.upper, two.sensitivity.lower]);
+  });
+
+  test('the bootstrap resamples whole runs: two runs of 20 attempts give the widest interval, not the one of 40 independent attempts', () => {
+    // Run 1: 20 attempts (1,1), cell a. Run 2: 20 attempts (1,0), cell b. False confidence is 20/40 = 0.5.
+    // By whole runs a resample holds run 1 twice (rate 0), both runs (0.5) or run 2 twice (1), with probabilities 1/4, 1/2, 1/4,
+    // so the 2.5% and 97.5% limits are 0 and 1. Resampling the 40 attempts one by one would give roughly 0.35 to 0.65.
+    const make = (run, j) => Array.from({ length: 20 }, (_, i) => attempt(run, 1, j, i + 1));
+    const t = S.attemptGaugeTable([...make(1, 1), ...make(2, 0)], { seed: 3, resamples: 4000 });
+    assert.equal(t.runs, 2);
+    near(t.falseConfidence.estimate, 0.5, 1e-12);
+    assert.equal(t.falseConfidence.lower, 0);
+    assert.equal(t.falseConfidence.upper, 1);
+  });
+
+  test('a replicate with an empty denominator is skipped and counted, not turned into a zero', () => {
+    // Run 1: 50 attempts (0,0), cell d. Run 2: 50 attempts (1,1), cell a. Both draws run 1 (1/4 of resamples) leave specificity and false
+    // confidence with an empty denominator; both draws run 2 (1/4) leave sensitivity empty: about 2,500 of 10,000 skipped per rate.
+    // Resampling single attempts would skip none.
+    const make = (run, g, j) => Array.from({ length: 50 }, (_, i) => attempt(run, g, j, i + 1));
+    const t = S.attemptGaugeTable([...make(1, 0, 0), ...make(2, 1, 1)], { seed: 5, resamples: 10000 });
+    for (const r of [t.sensitivity, t.specificity, t.falseConfidence]) {
+      assert.ok(r.skipped > 2300 && r.skipped < 2700, `skipped ${r.skipped}`);
+    }
+    // The values that remain are all 1 (sensitivity, specificity) or all 0 (false confidence).
+    assert.deepEqual([t.sensitivity.lower, t.sensitivity.upper], [1, 1]);
+    assert.deepEqual([t.specificity.lower, t.specificity.upper], [1, 1]);
+    assert.deepEqual([t.falseConfidence.lower, t.falseConfidence.upper], [0, 0]);
+  });
+
+  test('attemptGaugeTables: one table per arm over all its slots, then one per slot', () => {
+    const tables = S.attemptGaugeTables(attempts, opts);
+    assert.deepEqual(tables.map((t) => [t.arm, t.slot]), [['kit-bare', 'all'], ['kit-bare', 'cart'], ['kit-bare', 'ledger'], ['kit-tests', 'all'], ['kit-tests', 'cart'], ['kit-tests', 'ledger']]);
+    // kit-bare cart: (0,0) (0,0) (1,1) (1,0) (1,1): a = 2, b = 1, c = 0, d = 2.
+    const cart = tables.find((t) => t.arm === 'kit-bare' && t.slot === 'cart');
+    assert.deepEqual([cart.a, cart.b, cart.c, cart.d], [2, 1, 0, 2]);
+    const none = S.attemptGaugeTables([attempt(1, 1, 1)], opts);
+    assert.deepEqual(none.map((t) => [t.arm, t.slot]), [['x', 'all']]);
+  });
+});
+
+describe('firstAttemptCells (A4)', () => {
+  const runs = S.readRuns(readFixture('runs-attempts-synthetic.csv'));
+
+  test('counts the runs correct at the first attempt, per stack and slot', () => {
+    // First attempt, kit-tests: cart 3 of 3, ledger 1 of 3. kit-bare: cart 1 of 3 (run 3), ledger 2 of 3 (runs 2 and 3).
+    assert.deepEqual(S.firstAttemptCells(runs, 'kit-tests', 'kit-bare'), [
+      { stack: 'nextjs', slot: 'cart', xT: 3, nT: 3, xC: 1, nC: 3 },
+      { stack: 'nextjs', slot: 'ledger', xT: 1, nT: 3, xC: 2, nC: 3 },
+    ]);
+    // The final results of the same runs (hidden suite): kit-bare is correct in cart runs 1 and 3 and ledger runs 2 and 3.
+    assert.deepEqual(S.cellsFromRuns(runs, 'kit-tests', 'kit-bare'), [
+      { stack: 'nextjs', slot: 'cart', xT: 3, nT: 3, xC: 2, nC: 3 },
+      { stack: 'nextjs', slot: 'ledger', xT: 1, nT: 3, xC: 2, nC: 3 },
+    ]);
+  });
+
+  test('a run with no first-attempt result makes the whole result not available, never zeros', () => {
+    const old = S.readRuns('stack,arm,total_tokens,hidden_passed,hidden_total\nd,t,1,21,21\nd,c,1,0,21');
+    assert.equal(S.firstAttemptCells(old, 't', 'c'), null);
+    const partial = runs.map((r, i) => (i === 0 ? { ...r, firstCorrect: null } : r));
+    assert.equal(S.firstAttemptCells(partial, 'kit-tests', 'kit-bare'), null);
+    // Runs of other arms with no result do not matter.
+    const otherArm = [...runs, { arm: 'bare', stack: 'nextjs', slot: null, correct: false, firstCorrect: null }];
+    assert.notEqual(S.firstAttemptCells(otherArm, 'kit-tests', 'kit-bare'), null);
   });
 });

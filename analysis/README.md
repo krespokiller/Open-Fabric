@@ -14,10 +14,20 @@ node analysis/cli.mjs design               # the plan table, about 2.5 minutes
 node analysis/cli.mjs analyze experiments/E01-pilot-full-task/data/runs.csv
 node analysis/cli.mjs analyze experiments/E03-exploratory-loop-fixes/data/runs.csv
 node analysis/cli.mjs analyze experiments/E01-pilot-full-task/data/runs.csv experiments/E03-exploratory-loop-fixes/data/runs.csv
+node analysis/cli.mjs analyze <results-dir>/runs.csv --treatment kit-tests --control kit-bare --attempts <results-dir>/attempts.csv
 node analysis/cli.mjs help
 ```
 
 `analyze` takes one or more files and, with several, adds an "All files together" section. A column a file lacks is named in the output, never guessed: the two pilot files have no slot, seed or gauge column, so each stack is one stratum and the gauge tables say "Not available". When an arm has no correct run, the cost per correct run is printed as "at least N tokens per correct run" and no ratio is formed, so nothing divides by zero. To compare two arms add `--treatment ARM --control ARM`; to apply the decision rule to that comparison also add `--d-star 30 --looks 5` with `--z-r 2.05` or `--delta X` (and `--look`, `--hash`, `--plan-hash` for the instrument checks). Step 1 of the rule (an incomplete block is `undecidable`, a broken instrument) needs the planned design: add `--stacks django,nextjs --slots cart,ledger` (both together; `--slots all` for a file with no slot column). A planned stack and slot with no runs, a cell outside the plan, or cells with different numbers of runs then give `undecidable` with the cause. Without them the output says the incomplete-block check was not applied, and a missing slot goes unnoticed.
+
+## Two secondary results from per-attempt data
+
+Both are descriptive: they carry intervals and never a verdict (`SPEC.md` section 10).
+
+- **At the first attempt (calls held equal).** With `--treatment` and `--control`, when the `runs.csv` has the column `first_correct`, `analyze` adds the section "At the first attempt (calls held equal)": every run is scored at its first attempt, so both arms are compared with the same number of calls. It prints, per stack and pooled, the correct counts of each arm, the difference and its 95% Newcombe interval, then "Secondary result: no verdict.". A file without the column (the older results) gets no such section. If only some runs of the two arms have a first-attempt result, the section says "Not available" and how many are missing; a missing result is never counted as a failure.
+- **Gauge against judge, per attempt.** `--attempts <attempts.csv>` (one runs file; the `attempts.csv` of the same results directory) adds the section "Gauge against judge, per attempt": one table per arm, with one row for all its slots and one per slot when the arm has slots. Each row has the four cells (positive means the judge fails: a gauge passes and judge correct, b gauge passes and judge incorrect, c gauge fails and judge correct, d both fail), sensitivity d / (b + d), specificity a / (a + c) and false confidence b / (a + b), each with a 95% percentile bootstrap interval that resamples whole runs (stack, arm, slot and run, so the attempts of one run stay together), the number of runs and attempts, and the attempts left out because the judge result is empty ("unjudged"). A rate with an empty denominator is "not estimable"; a resample with an empty denominator is skipped and counted in the last column. The loop stops at the first attempt whose gauge passes, so a run has at most one attempt with a passing gauge, and it is its last: that is why sensitivity and specificity need these tables and cannot be read from final states.
+
+When any run has `judge_agrees = 0` (the hidden judge on the last attempt disagreed with the final judgement), the output starts with a warning line naming the count: the instrument must be checked before the result is used.
 
 ## The decision rule
 
@@ -60,7 +70,10 @@ In formulas. Strata are stack x slot, a cell is arm x stratum, d* is the smalles
 - `gaugeTable(runs)`, `gaugeTables(runs)`, `rateAtLeast`: gauge against judge, with sensitivity, specificity and false confidence.
 - `gaugeLoop(pi, se, sp, budget)`: gauge pass rate, false confidence and attempts.
 - `productLaw(q, xAll, nAll)`: R with its interval.
-- `readRuns(csv)`: runs with arm, stack, slot, seed, correct, gaugePass and tokens; missing columns are reported.
+- `readRuns(csv)`: runs with arm, stack, slot, seed, correct, gaugePass and tokens, and `firstCorrect`, `firstCorrectAttempt` and `judgeAgrees` (`null` when the columns are missing or empty); missing columns are reported.
+- `readAttempts(csv)`: one object per row of `attempts.csv` (stack, arm, slot, run, attempt, built, gaugePass, judgeCorrect, tokensIn, tokensOut); the arm is normalized as `readRuns` does it; missing required columns are an error that names them.
+- `attemptGaugeTable(attempts, { seed, resamples })`: the per-attempt 2x2 table of one arm (or arm and slot), the three rates, and their bootstrap-by-run intervals; `attemptGaugeTables(attempts, options)` makes one table per arm and per slot.
+- `firstAttemptCells(runs, treatmentArm, controlArm)`: the cells of the comparison with every run scored at its first attempt; `null` (not available) when a run of either arm has no first-attempt result.
 
 `simulate.mjs`
 

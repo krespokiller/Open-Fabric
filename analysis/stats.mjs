@@ -451,8 +451,8 @@ export function pooledTotals(cells) {
 
 const difference = (c) => (c.nT > 0 && c.nC > 0 ? c.xT / c.nT - c.xC / c.nC : null);
 
-// Counts of correct runs per stratum for the two arms being compared.
-export function cellsFromRuns(runs, treatmentArm, controlArm) {
+// Counts of runs per stratum for the two arms being compared, a run counting when `passes(run)` holds.
+function countCells(runs, treatmentArm, controlArm, passes) {
   const strata = new Map();
   for (const run of runs) {
     if (run.arm !== treatmentArm && run.arm !== controlArm) continue;
@@ -463,13 +463,27 @@ export function cellsFromRuns(runs, treatmentArm, controlArm) {
     const cell = strata.get(key);
     if (run.arm === treatmentArm) {
       cell.nT++;
-      if (run.correct) cell.xT++;
+      if (passes(run)) cell.xT++;
     } else {
       cell.nC++;
-      if (run.correct) cell.xC++;
+      if (passes(run)) cell.xC++;
     }
   }
   return [...strata.values()];
+}
+
+// Counts of correct runs per stratum for the two arms being compared.
+export function cellsFromRuns(runs, treatmentArm, controlArm) {
+  return countCells(runs, treatmentArm, controlArm, (run) => run.correct);
+}
+
+// The same counts with every run scored at its first attempt (first_correct), so both arms are held to
+// equal calls. null, "not available", when a run of either arm has no first-attempt result: a missing
+// result is never counted as a failure.
+export function firstAttemptCells(runs, treatmentArm, controlArm) {
+  const known = (run) => run.firstCorrect === true || run.firstCorrect === false;
+  if (runs.some((run) => (run.arm === treatmentArm || run.arm === controlArm) && !known(run))) return null;
+  return countCells(runs, treatmentArm, controlArm, (run) => run.firstCorrect);
 }
 
 // Per stack, per slot and pooled, each with its Newcombe interval. A slot whose observed
@@ -843,6 +857,98 @@ export function gaugeTables(runs) {
   return [...groups.values()].map((g) => ({ arm: g.arm, slot: g.slot, ...gaugeTable(g.runs) }));
 }
 
+// Per-attempt gauge against judge. `attempts` are rows of attempts.csv (readAttempts) of one arm, or of
+// one arm and slot: the caller filters, and a table is never pooled across arms.
+// Same convention as gaugeTable, positive means the judge fails:
+//   a: gauge passes, judge correct.  b: gauge passes, judge incorrect.
+//   c: gauge fails, judge correct.   d: gauge fails, judge incorrect.
+// Sensitivity d/(b+d), specificity a/(a+c), false confidence b/(a+b). An attempt with no judge result is
+// left out and counted in `unjudged`; one with no gauge result is left out and counted in `noGauge`.
+// Each rate has a 95% percentile interval from a seeded bootstrap that resamples whole runs (the cluster
+// is stack, arm, slot and run, so the attempts of one run stay together). A replicate whose denominator is
+// zero is skipped for that rate and counted in `skipped`. A rate whose denominator is zero in the data is
+// not estimable: no estimate and no limits. Descriptive only: there is no verdict on these rates.
+export function attemptGaugeTable(attempts, { seed = 1, resamples = 10000, level = 0.95 } = {}) {
+  let unjudged = 0;
+  let noGauge = 0;
+  const clusters = new Map();
+  const total = { a: 0, b: 0, c: 0, d: 0 };
+  for (const attempt of attempts) {
+    if (attempt.judgeCorrect !== true && attempt.judgeCorrect !== false) {
+      unjudged++;
+      continue;
+    }
+    if (attempt.gaugePass !== true && attempt.gaugePass !== false) {
+      noGauge++;
+      continue;
+    }
+    const cell = attempt.gaugePass ? (attempt.judgeCorrect ? 'a' : 'b') : (attempt.judgeCorrect ? 'c' : 'd');
+    const key = JSON.stringify([attempt.stack, attempt.arm, attempt.slot ?? null, attempt.run]);
+    if (!clusters.has(key)) clusters.set(key, { a: 0, b: 0, c: 0, d: 0 });
+    clusters.get(key)[cell]++;
+    total[cell]++;
+  }
+  const rates = {
+    sensitivity: (s) => [s.d, s.b + s.d],
+    specificity: (s) => [s.a, s.a + s.c],
+    falseConfidence: (s) => [s.b, s.a + s.b],
+  };
+  const names = Object.keys(rates);
+  const runs = [...clusters.values()];
+  const values = Object.fromEntries(names.map((name) => [name, []]));
+  if (runs.length > 0) {
+    const next = rng(seed);
+    for (let r = 0; r < resamples; r++) {
+      const sum = { a: 0, b: 0, c: 0, d: 0 };
+      for (let i = 0; i < runs.length; i++) {
+        const run = runs[Math.floor(next() * runs.length)];
+        sum.a += run.a;
+        sum.b += run.b;
+        sum.c += run.c;
+        sum.d += run.d;
+      }
+      for (const name of names) {
+        const [x, n] = rates[name](sum);
+        if (n > 0) values[name].push(x / n);
+      }
+    }
+  }
+  const n = total.a + total.b + total.c + total.d;
+  const result = { ...total, n, attempts: n, runs: runs.length, unjudged, noGauge, resamples: runs.length > 0 ? resamples : 0, level };
+  for (const name of names) {
+    const [x, denominator] = rates[name](total);
+    const drawn = values[name].sort((p, q) => p - q);
+    const k = Math.max(1, Math.floor(((1 - level) / 2) * (drawn.length + 1)));
+    const estimable = denominator > 0;
+    result[name] = {
+      x,
+      n: denominator,
+      estimable,
+      estimate: estimable ? x / denominator : null,
+      lower: estimable && drawn.length > 0 ? drawn[k - 1] : null,
+      upper: estimable && drawn.length > 0 ? drawn[drawn.length - k] : null,
+      skipped: runs.length > 0 ? resamples - drawn.length : 0,
+    };
+  }
+  return result;
+}
+
+// One table per arm over all its slots, then one per slot when the arm has slots.
+export function attemptGaugeTables(attempts, options = {}) {
+  const arms = new Map();
+  for (const attempt of attempts) {
+    if (!arms.has(attempt.arm)) arms.set(attempt.arm, []);
+    arms.get(attempt.arm).push(attempt);
+  }
+  const tables = [];
+  for (const [arm, rows] of arms) {
+    tables.push({ arm, slot: 'all', ...attemptGaugeTable(rows, options) });
+    const slots = [...new Set(rows.map((a) => a.slot).filter((slot) => slot !== null && slot !== undefined))];
+    for (const slot of slots) tables.push({ arm, slot, ...attemptGaugeTable(rows.filter((a) => a.slot === slot), options) });
+  }
+  return tables;
+}
+
 // "At least `threshold`" holds only when the Clopper-Pearson lower limit reaches it.
 export function rateAtLeast(rateResult, threshold) {
   return Boolean(rateResult && rateResult.estimable && rateResult.clopperPearson.lower >= threshold);
@@ -963,10 +1069,22 @@ function toBoolean(value) {
   return null;
 }
 
+// The harness writes a kit arm as `arm.slot` (kit-bare.cart) and repeats the slot in its own column.
+// The arm is read without the slot, so `kit-tests` against `kit-bare` compares the two arms slot by slot.
+// runs.csv and attempts.csv both go through here.
+function armAndSlot(rawArm, rawSlot) {
+  const slot = rawSlot === undefined || rawSlot === '' ? null : rawSlot;
+  const arm = slot !== null && rawArm.endsWith(`.${slot}`) ? rawArm.slice(0, -slot.length - 1) : rawArm;
+  return { arm, slot };
+}
+
 // Runs from the text of a runs.csv. A run is correct when it passes every test of every
 // hidden suite (columns hidden_passed/hidden_total, hidden2_passed/hidden2_total, ...).
 // slot, seed and the gauge result are null when the file has no such columns. The gauge
 // result is read from gauge_pass, or from gauge_passed/gauge_total, or visible_passed/visible_total.
+// firstCorrect, firstCorrectAttempt and judgeAgrees come from first_correct, first_correct_attempt and
+// judge_agrees: whether the first attempt was judged correct, the first attempt judged correct, and whether
+// the hidden judge on the last attempt agreed with the final judgement. null when the column is missing or empty.
 export function readRuns(csv) {
   const rows = parseCsv(csv.replace(/^﻿/, ''));
   if (rows.length === 0) return [];
@@ -1002,10 +1120,7 @@ export function readRuns(csv) {
       const total = Number(raw[`${gaugePair}_total`]);
       gaugePass = total > 0 ? Number(raw[`${gaugePair}_passed`]) === total : null;
     }
-    // The harness writes a kit arm as `arm.slot` (kit-bare.cart) and repeats the slot in its own column.
-    // The arm is read without the slot, so `kit-tests` against `kit-bare` compares the two arms slot by slot.
-    const slot = raw.slot === undefined || raw.slot === '' ? null : raw.slot;
-    const arm = slot !== null && raw.arm.endsWith(`.${slot}`) ? raw.arm.slice(0, -slot.length - 1) : raw.arm;
+    const { arm, slot } = armAndSlot(raw.arm, raw.slot);
     runs.push({
       arm,
       stack: raw.stack,
@@ -1021,8 +1136,45 @@ export function readRuns(csv) {
       hiddenPassed,
       hiddenTotal,
       hiddenFraction: hiddenTotal > 0 ? hiddenPassed / hiddenTotal : null,
+      firstCorrect: toBoolean(raw.first_correct),
+      firstCorrectAttempt: toNumber(raw.first_correct_attempt),
+      judgeAgrees: toBoolean(raw.judge_agrees),
       raw,
     });
   }
   return runs;
+}
+
+// Attempts from the text of an attempts.csv, one object per attempt. The arm is read as readRuns reads it
+// (`kit-bare.cart` with slot `cart` is arm `kit-bare`). judgeCorrect is null for results recorded before the
+// judge was run on every attempt.
+export function readAttempts(csv) {
+  const rows = parseCsv(csv.replace(/^﻿/, ''));
+  if (rows.length === 0) return [];
+  const header = rows[0].map((name) => name.trim());
+  const required = ['stack', 'arm', 'run', 'attempt', 'gauge_pass', 'judge_correct'];
+  const missing = required.filter((name) => !header.includes(name));
+  if (missing.length > 0) throw new Error(`attempts.csv is missing the column(s): ${missing.join(', ')}`);
+  const attempts = [];
+  for (const values of rows.slice(1)) {
+    if (values.length === 1 && values[0].trim() === '') continue;
+    const raw = {};
+    header.forEach((name, i) => {
+      raw[name] = values[i] ?? '';
+    });
+    const { arm, slot } = armAndSlot(raw.arm, raw.slot);
+    attempts.push({
+      stack: raw.stack,
+      arm,
+      slot,
+      run: toNumber(raw.run),
+      attempt: toNumber(raw.attempt),
+      built: toBoolean(raw.built),
+      gaugePass: toBoolean(raw.gauge_pass),
+      judgeCorrect: toBoolean(raw.judge_correct),
+      tokensIn: toNumber(raw.prompt_tokens),
+      tokensOut: toNumber(raw.completion_tokens),
+    });
+  }
+  return attempts;
 }

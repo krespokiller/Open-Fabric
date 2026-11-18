@@ -21,6 +21,11 @@ Commands
                    --stacks A,B --slots X,Y,Z   the planned design: a planned stratum with no runs makes the
                                    verdict undecidable (use --slots all for a file with no slot column)
                    --look N  --hash H --plan-hash H  --seed N  --resamples N (10000)
+                   --attempts FILE   attempts.csv of the same run: adds the gauge against the judge per
+                                   attempt (sensitivity, specificity, false confidence, bootstrap by run).
+                                   Takes one runs file. With --treatment and --control, a runs.csv that
+                                   has first_correct also gives the comparison at the first attempt
+                                   (calls held equal). Both are secondary results: no verdict.
   coverage         Exact coverage of the Wilson, Clopper-Pearson and Newcombe intervals.
                    --sizes N[,N] (10,20,30,50)
   cost-coverage    Coverage of the cost-per-correct-run limits with capped heavy-tailed tokens.
@@ -33,7 +38,7 @@ Commands
 const OPTIONS = {
   sizes: [],
   design: ['reps', 'seed', 'stacks', 'slots', 'step', 'd-star', 'looks'],
-  analyze: ['treatment', 'control', 'd-star', 'looks', 'delta', 'z-r', 'look', 'hash', 'plan-hash', 'stacks', 'slots', 'seed', 'resamples'],
+  analyze: ['treatment', 'control', 'd-star', 'looks', 'delta', 'z-r', 'look', 'hash', 'plan-hash', 'stacks', 'slots', 'seed', 'resamples', 'attempts'],
   coverage: ['sizes'],
   'cost-coverage': ['reps', 'resamples', 'seed'],
   'product-law': ['reps', 'seed'],
@@ -135,8 +140,22 @@ function summarizeArm(label, runs, seed, resamples) {
   };
 }
 
+// The comparison with every run scored at its first attempt (calls held equal). null when no run of the two
+// arms has a first-attempt result (an older file): the section is then left out. When only some runs have
+// one, the result is "not available" and says how many are missing, never zeros.
+function firstAttemptOf(runs, treatment, control) {
+  const compared = runs.filter((r) => r.arm === treatment || r.arm === control);
+  const known = compared.filter((r) => r.firstCorrect === true || r.firstCorrect === false).length;
+  if (known === 0) return null;
+  const cells = S.firstAttemptCells(runs, treatment, control);
+  if (cells === null) return { available: false, runs: compared.length, missing: compared.length - known };
+  const summary = S.summarizeCells(cells);
+  return { available: true, cells, perStack: summary.perStack, pooled: summary.pooled };
+}
+
 // Everything the report of one set of runs needs, as plain data.
-//   options: { seed, resamples, treatment, control, dStar, plan, look, hash }
+//   options: { seed, resamples, treatment, control, dStar, plan, look, hash, attempts }
+//   attempts: the rows of an attempts.csv (S.readAttempts), for the gauge against the judge per attempt.
 export function analyzeRuns(runs, options = {}) {
   const seed = options.seed ?? DEFAULT_SEED;
   const resamples = options.resamples ?? 10000;
@@ -159,6 +178,9 @@ export function analyzeRuns(runs, options = {}) {
     all: summarizeArm('all arms', runs, seed, resamples),
     perStack: [],
     gauge: missingColumns.includes('gauge result') || runs.length === 0 ? null : S.gaugeTables(runs),
+    judgeDisagreements: runs.filter((r) => r.judgeAgrees === false).length,
+    attemptGauge: options.attempts ? S.attemptGaugeTables(options.attempts, { seed, resamples }) : null,
+    attemptSettings: { seed, resamples },
     comparison: null,
   };
   for (const arm of arms) {
@@ -205,6 +227,7 @@ export function analyzeRuns(runs, options = {}) {
       contrasts: S.stackContrasts(summary.perStack),
       posterior: S.posteriorDifference(cells, dStar ?? 0),
       costRatio: S.costRatio(runs.filter((r) => r.arm === treatment), runs.filter((r) => r.arm === control), seed, { resamples }),
+      firstAttempt: firstAttemptOf(runs, treatment, control),
       decision,
     };
   }
@@ -274,11 +297,53 @@ function renderComparison(c) {
   return out.join('\n');
 }
 
+// Secondary result, no verdict: every run scored at its first attempt, so the arms get the same calls.
+function renderFirstAttempt(c, first) {
+  const out = ['### At the first attempt (calls held equal)', ''];
+  if (!first.available) {
+    out.push(`Not available: ${first.missing} of ${first.runs} runs of these two arms have no first-attempt result (first_correct), so no count is formed.`);
+    return out.join('\n');
+  }
+  const rowOf = (label, r) => [label, `${r.xT} of ${r.nT}`, `${r.xC} of ${r.nC}`, r.difference === null ? 'not estimable' : points(r.difference), r.difference === null ? 'not estimable' : range(r.interval, points)];
+  const rows = [...first.perStack.map((s) => rowOf(`stack ${s.stack}`, s)), rowOf('pooled', first.pooled)];
+  out.push('Every run is scored at its first attempt (first_correct), so both arms are compared with the same number of calls.', '');
+  out.push(table(['Stratum', `Correct, ${c.treatment}`, `Correct, ${c.control}`, 'Difference (points)', 'Newcombe interval (points)'], rows), '');
+  out.push('All rows use 95% intervals. Secondary result: no verdict.');
+  return out.join('\n');
+}
+
+// Secondary result, no verdict: the gauge against the judge on every attempt, one table per arm.
+function renderAttemptGauge(tables, settings) {
+  const out = ['### Gauge against judge, per attempt', ''];
+  if (tables.length === 0) {
+    out.push('No attempts in the file.');
+    return out.join('\n');
+  }
+  const rateCell = (r) => {
+    if (!r.estimable) return 'not estimable';
+    const interval = r.lower === null ? 'no interval' : `bootstrap ${range(r)}`;
+    return `${r.x} of ${r.n}, ${percent(r.estimate)} (${interval})`;
+  };
+  const arms = unique(tables.map((t) => t.arm));
+  for (const arm of arms) {
+    out.push(`#### ${arm}`, '');
+    out.push(table(
+      ['Slot', 'a: gauge passes, judge correct', 'b: gauge passes, judge incorrect', 'c: gauge fails, judge correct', 'd: gauge fails, judge incorrect', 'Sensitivity', 'Specificity', 'False confidence', 'Runs', 'Attempts', 'Unjudged', 'Resamples skipped (sensitivity / specificity / false confidence)'],
+      tables.filter((t) => t.arm === arm).map((t) => [t.slot, t.a, t.b, t.c, t.d, rateCell(t.sensitivity), rateCell(t.specificity), rateCell(t.falseConfidence), t.runs, t.attempts, t.unjudged, `${t.sensitivity.skipped} / ${t.specificity.skipped} / ${t.falseConfidence.skipped}`]),
+    ), '');
+  }
+  out.push(`Positive means the judge fails. Sensitivity is d / (b + d), specificity a / (a + c), false confidence b / (a + b). Limits are 95% percentile bootstrap limits that resample whole runs (${whole(settings.resamples)} resamples, seed ${settings.seed}); a resample whose denominator is empty is skipped and counted. A rate of 0% or 100% gets limits of zero width from the bootstrap: that says the sample showed no variation, not that the rate is known. Attempts with no judge result are left out and counted as unjudged. Tables are never pooled across arms. Secondary result: no verdict.`);
+  return out.join('\n');
+}
+
 export function renderAnalysis(report, title) {
   const out = [`## ${title}`, ''];
   if (report.runs === 0) {
     out.push('No runs.');
     return `${out.join('\n')}\n`;
+  }
+  if (report.judgeDisagreements > 0) {
+    out.push(`Warning: ${report.judgeDisagreements} of ${report.runs} runs have judge_agrees = 0: the hidden judge on the last attempt did not agree with the final judgement. The instrument must be checked before the result is used.`, '');
   }
   const facts = [`${report.runs} runs`, `arms: ${report.arms.join(', ')}`, `stacks: ${report.stacks.join(', ')}`];
   if (report.slots.length > 0) facts.push(`slots: ${report.slots.join(', ')}`);
@@ -330,6 +395,8 @@ export function renderAnalysis(report, title) {
   }
 
   if (report.comparison) out.push(renderComparison(report.comparison), '');
+  if (report.comparison?.firstAttempt) out.push(renderFirstAttempt(report.comparison, report.comparison.firstAttempt), '');
+  if (report.attemptGauge) out.push(renderAttemptGauge(report.attemptGauge, report.attemptSettings), '');
   return `${out.join('\n')}\n`;
 }
 
@@ -370,6 +437,15 @@ function planOf(options) {
   return { dStar, plan };
 }
 
+// The text of a file, or of standard input for "-".
+function readInput(file, io) {
+  try {
+    return file === '-' ? (io.stdin ?? readFileSync(0, 'utf8')) : readFileSync(file, 'utf8');
+  } catch (error) {
+    throw new UsageError(`cannot read ${file}: ${error.code ?? error.message}`);
+  }
+}
+
 function commandAnalyze(positional, options, io) {
   if (positional.length === 0) throw new UsageError('analyze needs at least one runs.csv');
   if ((options.treatment === undefined) !== (options.control === undefined)) throw new UsageError('a comparison needs both --treatment and --control');
@@ -385,16 +461,14 @@ function commandAnalyze(positional, options, io) {
     look: number(options, 'look', undefined),
     hash: options.hash,
   };
+  if (options.attempts !== undefined) {
+    if (positional.length !== 1) throw new UsageError('--attempts goes with one runs file: the attempts.csv belongs to the runs.csv of the same results directory');
+    settings.attempts = S.readAttempts(readInput(options.attempts, io));
+  }
   const everything = [];
   const sections = [];
   for (const file of positional) {
-    let text;
-    try {
-      text = file === '-' ? (io.stdin ?? readFileSync(0, 'utf8')) : readFileSync(file, 'utf8');
-    } catch (error) {
-      throw new UsageError(`cannot read ${file}: ${error.code ?? error.message}`);
-    }
-    const runs = S.readRuns(text);
+    const runs = S.readRuns(readInput(file, io));
     everything.push(...runs);
     sections.push(renderAnalysis(analyzeRuns(runs, settings), file === '-' ? 'standard input' : file.replaceAll('\\', '/')));
   }
@@ -548,7 +622,7 @@ export async function main(argv, io = {}) {
     else if (command === 'product-law') commandProductLaw(options, context);
     return 0;
   } catch (error) {
-    if (error instanceof UsageError || error instanceof RangeError || /runs\.csv/.test(error.message)) {
+    if (error instanceof UsageError || error instanceof RangeError || /(runs|attempts)\.csv/.test(error.message)) {
       writeError(`Error: ${error.message}\n\n${USAGE}`);
       return 1;
     }

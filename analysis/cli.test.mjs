@@ -318,3 +318,139 @@ describe('design tables', () => {
     assert.equal((await run(['analyze'])).code, 1);
   });
 });
+
+// ---- per-attempt results: the first-attempt comparison and the per-attempt gauge (A5) ----
+
+describe('analyze with first-attempt and per-attempt results', () => {
+  const runsFile = fileURLToPath(new URL('./fixtures/runs-attempts-synthetic.csv', import.meta.url));
+  const attemptsFile = fileURLToPath(new URL('./fixtures/attempts-synthetic.csv', import.meta.url));
+  const compare = ['--treatment', 'kit-tests', '--control', 'kit-bare'];
+  const section = (text, heading) => {
+    const start = text.indexOf(`### ${heading}`);
+    if (start < 0) return null;
+    const rest = text.slice(start + 4);
+    const end = rest.search(/\n#{2,3} /);
+    return end < 0 ? rest : rest.slice(0, end);
+  };
+  async function runWith(args, stdin) {
+    let out = '';
+    let err = '';
+    const code = await main(args, { write: (text) => { out += text; }, writeError: (text) => { err += text; }, stdin });
+    return { code, out, err };
+  }
+
+  test('the first-attempt section: counts, difference and Newcombe interval, by hand, and no verdict', async () => {
+    // First attempt (fixture): kit-tests 3 of 3 in cart and 1 of 3 in ledger, so 4 of 6; kit-bare 1 of 3 and 2 of 3, so 3 of 6.
+    // Difference 4/6 - 3/6 = +1/6 = +16.7 points; the one stack holds every run, so the stack row and the pooled row agree.
+    const { code, out, err } = await runWith(['analyze', runsFile, ...compare]);
+    assert.equal(code, 0, err);
+    assert.doesNotMatch(out, NEVER);
+    const text = section(out, 'At the first attempt (calls held equal)');
+    assert.ok(text, 'section present');
+    const interval = S.newcombe(4, 6, 3, 6);
+    const pts = (v) => `${100 * v > 0 ? '+' : ''}${(100 * v).toFixed(1)}`;
+    const expected = ['4 of 6', '3 of 6', '+16.7', `${pts(interval.lower)} to ${pts(interval.upper)}`];
+    assert.deepEqual(row(text, 'stack nextjs')[0].slice(1), expected);
+    assert.deepEqual(row(text, 'pooled')[0].slice(1), expected);
+    assert.match(text, /Secondary result: no verdict\./);
+    assert.doesNotMatch(text, /supported|refuted/i);
+    // The final results of the same runs are 4 of 6 against 4 of 6: the main table is not changed by the new section.
+    assert.deepEqual(row(out, 'pooled')[0].slice(1, 3), ['4 of 6', '4 of 6']);
+  });
+
+  test('a file without first_correct has no such section; some runs without it say not available', async () => {
+    const old = await runWith(['analyze', e03, '--treatment', 'tests', '--control', 'bare']);
+    assert.equal(old.code, 0, old.err);
+    assert.doesNotMatch(old.out, /first attempt/i);
+    const lines = readFileSync(runsFile, 'utf8').trim().split('\n');
+    const header = lines[0].split(',');
+    const at = header.indexOf('first_correct');
+    const partial = lines.map((line, i) => (i === 1 ? line.split(',').map((v, j) => (j === at ? '' : v)).join(',') : line)).join('\n');
+    const { code, out, err } = await runWith(['analyze', '-', ...compare], partial);
+    assert.equal(code, 0, err);
+    const text = section(out, 'At the first attempt (calls held equal)');
+    assert.match(text, /Not available: 1 of 12 runs of these two arms have no first-attempt result/);
+    assert.doesNotMatch(text, /\| pooled \|/);
+  });
+
+  test('--attempts adds one table per arm: the four cells, the three rates with their intervals, runs, attempts and unjudged', async () => {
+    const { code, out, err } = await runWith(['analyze', runsFile, ...compare, '--attempts', attemptsFile, '--resamples', '2000']);
+    assert.equal(code, 0, err);
+    assert.doesNotMatch(out, NEVER);
+    const text = section(out, 'Gauge against judge, per attempt');
+    assert.ok(text, 'section present');
+    assert.match(text, /#### kit-bare/);
+    assert.match(text, /#### kit-tests/);
+    // kit-bare over all slots, by hand: a 4, b 1, c 1, d 5; sensitivity 5 of 6, specificity 4 of 5, false confidence 1 of 5; 6 runs, 11 attempts.
+    const bare = row(text, 'all')[0];
+    assert.deepEqual(bare.slice(1, 5), ['4', '1', '1', '5']);
+    assert.match(bare[5], /^5 of 6, 83\.3% \(bootstrap [\d.]+% to [\d.]+%\)/);
+    assert.match(bare[6], /^4 of 5, 80\.0%/);
+    assert.match(bare[7], /^1 of 5, 20\.0%/);
+    assert.deepEqual(bare.slice(8, 11), ['6', '11', '0']);
+    // kit-tests over all slots: a 4, b 1, c 0, d 3.
+    const tests = row(text, 'all')[1];
+    assert.deepEqual(tests.slice(1, 5), ['4', '1', '0', '3']);
+    // Per slot rows exist for each arm that has slots.
+    assert.equal(row(text, 'cart').length, 2);
+    assert.equal(row(text, 'ledger').length, 2);
+    assert.doesNotMatch(text, /supported|refuted/i);
+    // Same seed, same output.
+    const again = await runWith(['analyze', runsFile, ...compare, '--attempts', attemptsFile, '--resamples', '2000']);
+    assert.equal(again.out, out);
+  });
+
+  test('a table with an empty denominator says not estimable', async () => {
+    // Only the three attempts (0,0) of kit-tests ledger run 2: d = 3, so specificity and false confidence have an empty denominator.
+    const only = readFileSync(attemptsFile, 'utf8').split('\n').filter((l, i) => i === 0 || /^nextjs,kit-tests\.ledger,ledger,2,/.test(l)).join('\n');
+    const { code, out, err } = await runWith(['analyze', runsFile, '--attempts', '-', '--resamples', '200'], only);
+    assert.equal(code, 0, err);
+    assert.doesNotMatch(out, NEVER);
+    const text = section(out, 'Gauge against judge, per attempt');
+    const all = row(text, 'all')[0];
+    assert.deepEqual(all.slice(1, 5), ['0', '0', '0', '3']);
+    assert.match(all[5], /^3 of 3, 100\.0%/);
+    assert.equal(all[6], 'not estimable');
+    assert.equal(all[7], 'not estimable');
+  });
+
+  test('judge_agrees = 0 puts a warning first: the count, and the instrument must be checked', async () => {
+    const lines = readFileSync(runsFile, 'utf8').trim().split('\n');
+    lines[2] = lines[2].replace(/,1$/, ',0');
+    lines[5] = lines[5].replace(/,1$/, ',0');
+    const { code, out, err } = await runWith(['analyze', '-', ...compare], lines.join('\n'));
+    assert.equal(code, 0, err);
+    const body = out.split('\n');
+    assert.match(body[0], /^## /);
+    assert.equal(body[1], '');
+    assert.match(body[2], /^Warning: 2 of 12 runs have judge_agrees = 0/);
+    assert.match(body[2], /instrument must be checked before the result is used/);
+    const clean = await runWith(['analyze', runsFile, ...compare]);
+    assert.doesNotMatch(clean.out, /Warning|judge_agrees/);
+  });
+
+  test('analyzeRuns carries the same data the text prints', () => {
+    const runs = S.readRuns(readFileSync(runsFile, 'utf8'));
+    const report = analyzeRuns(runs, { seed: 1, resamples: 100, treatment: 'kit-tests', control: 'kit-bare', attempts: S.readAttempts(readFileSync(attemptsFile, 'utf8')) });
+    assert.equal(report.judgeDisagreements, 0);
+    assert.deepEqual([report.comparison.firstAttempt.pooled.xT, report.comparison.firstAttempt.pooled.nT, report.comparison.firstAttempt.pooled.xC, report.comparison.firstAttempt.pooled.nC], [4, 6, 3, 6]);
+    assert.equal(report.attemptGauge.length, 6);
+    const old = analyzeRuns(S.readRuns(readFileSync(e03, 'utf8')), { treatment: 'tests', control: 'bare' });
+    assert.equal(old.comparison.firstAttempt, null);
+    assert.equal(old.attemptGauge, null);
+  });
+
+  test('--attempts goes with one runs file, an unreadable file or missing columns are errors, and the help lists it', async () => {
+    const two = await runWith(['analyze', runsFile, runsFile, '--attempts', attemptsFile]);
+    assert.equal(two.code, 1);
+    assert.match(two.err, /--attempts goes with one runs file/);
+    const missing = await runWith(['analyze', runsFile, '--attempts', 'no-such-file.csv']);
+    assert.equal(missing.code, 1);
+    assert.match(missing.err, /cannot read no-such-file\.csv/);
+    const bad = await runWith(['analyze', runsFile, '--attempts', '-'], 'stack,arm,run\nd,a,1');
+    assert.equal(bad.code, 1);
+    assert.match(bad.err, /attempts\.csv is missing the column\(s\): attempt, gauge_pass, judge_correct/);
+    const help = await runWith(['help']);
+    assert.match(help.out, /--attempts/);
+  });
+});
