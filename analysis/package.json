@@ -1,0 +1,13 @@
+{
+  "name": "openfabric-analysis",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Statistics for OpenFabric experiments: the decision rule, its simulator and the analysis of runs.csv.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=22" },
+  "main": "run-tests.mjs",
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,17 @@
+stack,arm,run,calls,prompt_tokens,completion_tokens,total_tokens,tokens_estimated,hidden_passed,hidden_total,stop_reason,built_final,wall_ms,model_ms,build_ms,hidden2_passed,hidden2_total
+django,bare,1,6,22605,49152,71757,false,0,21,budget,true,1360081,968559,232704,0,26
+django,bare,2,6,34926,14210,49136,false,0,21,budget,false,636277,281097,224932,0,26
+django,bare,3,6,28389,11764,40153,false,0,21,budget,true,730631,271644,279785,0,26
+django,bare,4,6,22853,35317,58170,false,0,21,budget,false,1070878,668821,244269,0,26
+django,tests,1,6,39220,13634,52854,false,0,21,budget,true,659029,278864,222482,0,26
+django,tests,2,6,28442,44883,73325,false,0,21,budget,true,1242514,822227,263315,0,26
+django,tests,3,6,38565,12014,50579,false,0,21,budget,false,571193,236515,209011,0,26
+django,tests,4,6,36724,10240,46964,false,0,21,budget,false,561809,200418,230409,0,26
+nextjs,bare,1,6,40353,14165,54518,false,0,21,budget,false,445888,282275,130782,0,26
+nextjs,bare,2,6,44508,12135,56643,false,0,21,budget,false,433269,254967,149645,0,26
+nextjs,bare,3,6,37863,14827,52690,false,0,21,budget,false,411877,272632,113624,0,26
+nextjs,bare,4,6,38499,11311,49810,false,0,21,budget,false,422877,231013,150803,0,26
+nextjs,tests,1,6,42166,16991,59157,false,0,21,budget,false,480553,321907,128924,0,26
+nextjs,tests,2,6,41114,5538,46652,false,0,21,budget,false,323097,118132,171965,0,26
+nextjs,tests,3,6,42520,10172,52692,false,0,21,budget,false,329418,191708,111910,0,26
+nextjs,tests,4,6,43545,13412,56957,false,0,21,budget,false,400621,256765,115323,0,26

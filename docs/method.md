@@ -173,14 +173,16 @@ The plan is chosen with the smallest difference that matters. For a design of tw
 
 | $d^*$ | Runs per cell | Total runs | `supported` when the true difference is $d^*$ | `refuted` when there is no difference |
 | --- | --- | --- | --- | --- |
-| 50 points | 2 | 40 | 85 to 90% | 82% |
-| 40 points | 3 | 60 | 83 to 91% | 83% |
+| 50 points | 2 | 40 | 84 to 90% | 85% |
+| 40 points | 3 | 60 | 84 to 90% | 83% |
 | 30 points | 5 | 100 | 81 to 92% | 82% |
-| 30 points, two looks | 3, then 6 | up to 120 | 87 to 96% | 86% |
-| 20 points | 10 | 200 | 78 to 93% | 75% |
+| 30 points, two looks | 3, then 6 | up to 120 | 87 to 96% | 88% |
+| 20 points | 10 | 200 | 78 to 93% | 76% |
 | 20 points, two looks | 6, then 12 | up to 240 | 84 to 96% | 83% |
 
-When the true difference is half of $d^*$, the verdict is `undecidable` in 38 to 50% of experiments. That is the rule working: the data cannot say.
+The table is printed by `node analysis/cli.mjs design` (100,000 seeded replicates per scenario). In every plan the rule supports a treatment with no effect at most 2.0% of the time and refutes a true difference of $d^*$ at most 2.4% of the time.
+
+When the true difference is half of $d^*$, the verdict is `undecidable` in 33 to 47% of experiments. That is the rule working: the data cannot say.
 
 For a plain comparison of two arms with no strata, Fisher's exact test at 80% power needs about 102, 49, 29 and 18 runs per arm to detect 20, 30, 40 and 50 points around 50%. Twenty-five runs per arm detect about 40 points and nothing smaller.
 
