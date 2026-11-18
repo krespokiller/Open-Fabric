@@ -1,0 +1,5 @@
+stack,arm,run,attempts,prompt_tokens,completion_tokens,total_tokens,hidden_passed,hidden_total,hidden2_passed,hidden2_total,stop_reason,built_final,attempts_compiled,attempts_zero_files,files_written
+nextjs,bare,1,6,39855,12436,52291,0,21,0,26,budget,false,0,0,22
+nextjs,docs,1,6,30093,2322,32415,0,21,0,26,budget,true,6,6,0
+nextjs,of-spec,1,6,36430,2773,39203,0,21,0,26,budget,true,6,6,0
+nextjs,tests,1,6,41524,17164,58688,0,21,0,26,budget,false,0,0,27

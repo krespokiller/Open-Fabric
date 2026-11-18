@@ -1,0 +1,17 @@
+stack,arm,run,attempts,attempts_compiled,attempts_compiled_with_files,max_visible_passed,visible_total,attempts_at_output_cap,retries,retries_identical,attempts_zero_files,files_written
+django,bare,1,6,6,1,1,4,6,5,1,5,1
+django,bare,2,6,0,0,0,0,1,5,1,0,8
+django,bare,3,6,4,3,1,4,1,5,0,1,5
+django,bare,4,6,5,1,1,4,4,5,0,4,2
+django,tests,1,6,5,5,1,12,0,5,1,0,8
+django,tests,2,6,6,1,1,12,5,5,0,5,1
+django,tests,3,6,0,0,0,0,0,5,2,0,8
+django,tests,4,6,0,0,0,0,0,5,0,0,9
+nextjs,bare,1,6,0,0,0,0,0,5,2,0,27
+nextjs,bare,2,6,0,0,0,0,0,5,1,0,38
+nextjs,bare,3,6,0,0,0,0,0,5,2,1,40
+nextjs,bare,4,6,1,0,1,4,1,5,1,1,80
+nextjs,tests,1,6,0,0,0,0,1,5,3,0,26
+nextjs,tests,2,6,0,0,0,0,0,5,0,1,14
+nextjs,tests,3,6,0,0,0,0,0,5,3,0,17
+nextjs,tests,4,6,0,0,0,0,0,5,0,0,37
