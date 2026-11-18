@@ -112,6 +112,8 @@ Cada corrida deja en `results/<carpeta>/`:
 
 `node src/cli.mjs report results/<carpeta>` regenera el reporte.
 
+Columnas de `runs.csv`: `stack`, `arm`, `run` (desde 1), `calls`, `prompt_tokens`, `completion_tokens` y `total_tokens` (entrada, salida y total; `tokens_estimated` es `true` si el servidor no informó el uso y se estimó como caracteres / 4), `hidden_passed` y `hidden_total`, `stop_reason`, `built_final`, `wall_ms`, `model_ms`, `build_ms`, `hidden2_passed` y `hidden2_total`. Se añaden al final, sin cambiar las anteriores: `slot` (la ranura que llena un run de kit, vacía en los brazos de tarea completa), `gauge_pass` (`1` si todos los checks visibles para ese brazo pasaron en el último intento, `0` si no; coincide con `stop_reason = visible_checks_pass`) y `correct` (`1` si el run pasa todos los tests de las dos suites ocultas, `0` si no; es lo que cuenta la columna «Runs passing both suites» del reporte).
+
 ## Reglas para que el resultado sea creíble
 
 1. **Fija el criterio antes de correr y publícalo antes de los números.** Propuesta: OpenFabric gana si, en cada stack, `of-spec` pasa más tests ocultos que `tests` y gasta al menos 30% menos tokens por test pasado. Como comparación secundaria, `of-spec` contra `docs`.

@@ -57,9 +57,27 @@ node src/cli.mjs run --model hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K
 
 The default `--base-url` is `http://localhost:12434/engines/v1`; any OpenAI-compatible endpoint works (`--base-url`, `--api-key`). `ai/qwen2.5-coder` is no longer on Docker Hub. Use a **single-file** GGUF: multi-file (split) GGUFs such as the official `Qwen/Qwen2.5-Coder-7B-Instruct-GGUF` fail to load in Docker Model Runner with `invalid split file name`. A 7B model on CPU is not viable for the pilot: on a 12-core machine we measured ~2 output tokens/s, about 40 minutes per call, so enable GPU inference. The llama.cpp default context of 4,096 tokens is too small: first prompts are 2,400 to 4,300 tokens and later ones include the code written so far. A context overflow stops the matrix with a clear message instead of being scored as a model failure.
 
-Re-running with the same `--out` directory resumes: finished runs are skipped, and runs that hit environment errors (model server down, Docker out of disk, container clock skew) are retried; they are never counted. The harness refuses to resume if the model, temperature, budget or any experiment file changed.
+Re-running with the same `--out` directory resumes: finished runs are skipped, and runs that hit environment errors (model server down, Docker out of disk, container clock skew) are retried; they are never counted. The harness refuses to resume if the model, temperature, budget, slot list or any experiment file changed.
 
 Results land in `results/<dir>/`: `report.md` (tables per stack and arm with mean ± sd, per-test pass rates, stop reasons, uncounted runs, hashes, machine), `runs.csv`, and `runs/*/` with `metrics.json`, `transcript.jsonl` and the produced `workspace/`.
+
+### `runs.csv` columns
+
+One row per run, in the order of `runs/`. The first 17 columns are fixed for compatibility; new columns are only appended.
+
+| Column | Meaning |
+| --- | --- |
+| `stack`, `arm`, `run` | The cell and the run index (1-based). A kit arm is `kit-bare.<slot>` or `kit-tests.<slot>` |
+| `calls` | Model calls used |
+| `prompt_tokens`, `completion_tokens`, `total_tokens` | Input, output and total tokens, summed over the calls. `tokens_estimated` is `true` when the server reported no usage and they are characters / 4 |
+| `hidden_passed`, `hidden_total` | Tests passed and run in the first hidden suite |
+| `hidden2_passed`, `hidden2_total` | The same for the second hidden suite |
+| `stop_reason` | `visible_checks_pass` or `budget` |
+| `built_final` | The final fresh build started |
+| `wall_ms`, `model_ms`, `build_ms` | Wall time, time in model calls and time building |
+| `slot` | The slot a kit run fills (`discount`, `cart`, ...). Empty for the full-task arms |
+| `gauge_pass` | `1` when every check visible to that arm (smoke, plus the public tests for `tests`, `of-spec`, `of-code` and `kit-tests`) passed in the last attempt, else `0`. It is the stop rule: `1` exactly when `stop_reason` is `visible_checks_pass` |
+| `correct` | `1` when the run passes every test of both hidden suites (and both suites ran), else `0`. The report's "Runs passing both suites" counts these |
 
 ## Rules for a credible result
 

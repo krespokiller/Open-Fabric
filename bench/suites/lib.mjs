@@ -36,7 +36,9 @@ export function makeCtx({ base, adminKey, webhookSecret, psp, prefix, signal }) 
   const next = () => ++counter;
 
   async function req(method, path, { key, body, raw, headers = {}, timeoutMs = 20000 } = {}) {
-    const h = { ...headers };
+    // One connection per request. gunicorn closes an idle keep-alive connection after 2 s while fetch keeps it
+    // longer, so a reused connection in that window fails with "fetch failed" and the judge blames the app.
+    const h = { ...headers, Connection: 'close' };
     if (key !== undefined && key !== null) h['Authorization'] = `Bearer ${key}`;
     let payload;
     if (raw !== undefined) {

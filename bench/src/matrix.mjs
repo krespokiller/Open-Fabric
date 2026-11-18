@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { InfraError, ROOT, readJson, sh, tail, writeJson } from './util.mjs';
 import { loadStack, createWorkspace, applyChanges, listFiles } from './workspace.mjs';
-import { DEFAULT_ARMS, armApplies, armSeesPublicTests, buildMessages, expandArm, isKnownArm, kitSelectionProblem, parseArm } from './prompts.mjs';
+import { DEFAULT_ARMS, armApplies, armSeesPublicTests, buildMessages, expandArm, isKnownArm, kitFeedbackText, kitSelectionProblem, parseArm } from './prompts.mjs';
 import { chat } from './model.mjs';
 import { parseAnswer } from './protocol.mjs';
 import { startApp } from './runner.mjs';
@@ -67,6 +67,8 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
   const slotFile = kit.kit ? stack.kit.slots[kit.slot] : null;
   // Kit arms: the reference is installed and the slot file is replaced by its unfilled stub.
   if (slotFile) fs.copyFileSync(path.join(ROOT, 'arms', 'kit', stack.name, slotFile), path.join(workspace, slotFile));
+  // In a kit run the installed code stays hidden, so build and runtime output reaches the model without quotes of it.
+  const forModel = (text) => (slotFile ? kitFeedbackText(text, slotFile) : text);
   const transcript = path.join(runDir, 'transcript.jsonl');
   const visibleSuites = armSeesPublicTests(arm) ? ['smoke', 'public'] : ['smoke'];
   const readOnly = readOnlyFor(stack, arm);
@@ -102,7 +104,7 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
       try {
         await app.psp.reset();
         visible = await judge(app.baseUrl, app.psp, visibleSuites);
-        if (visible.some((r) => !r.pass)) logs = await app.logs();
+        if (visible.some((r) => !r.pass)) logs = forModel(await app.logs());
       } finally {
         await app.stop();
       }
@@ -122,7 +124,7 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
       metrics.stopReason = 'visible_checks_pass';
       break;
     }
-    feedback = formatFeedback({ applied, parsed, app, visible, logs, repeated });
+    feedback = formatFeedback({ applied, parsed, app: slotFile ? { ...app, output: forModel(app.output) } : app, visible, logs, repeated });
   }
 
   // Final judgement: fresh build, empty database, hidden suites only (hidden first, then hidden2).
@@ -155,7 +157,9 @@ async function runOne({ stack, arm, runIndex, opts, localPsp, runDir, params }) 
   return metrics;
 }
 
-const COMPARED = ['model', 'baseUrl', 'temperature', 'maxTokens', 'budget', 'runtime', 'experimentHash'];
+// Settings a resume must repeat. `slots` is the --slots list (sorted), or null for every slot of the stack;
+// `kitArms` is every kit arm with its slot that the selected stacks will run (for example kit-bare.cart).
+const COMPARED = ['model', 'baseUrl', 'temperature', 'maxTokens', 'budget', 'runtime', 'slots', 'kitArms', 'experimentHash'];
 
 export async function runMatrix({ cmd, values, stacks, stamp }) {
   const selftest = cmd === 'selftest';
@@ -196,9 +200,14 @@ export async function runMatrix({ cmd, values, stacks, stamp }) {
   const outDir = values.out ? path.resolve(values.out) : path.join(ROOT, 'results', `${selftest ? 'selftest' : 'run'}-${stamp}`);
   const git = await sh('git rev-parse --short HEAD && git status --porcelain', { cwd: ROOT, timeoutMs: 10000 });
   const [commit, ...dirty] = git.code === 0 ? git.out.trim().split('\n') : ['unknown'];
+  const kitArms = [...new Set(stacks.flatMap((name) => {
+    const stack = loadStack(name);
+    return arms.flatMap((a) => expandArm(stack, a, slots)).filter((a) => parseArm(a).kit && armApplies(stack, a));
+  }))].sort();
   const params = {
     model, baseUrl: selftest ? 'fake' : opts.modelConfig.baseUrl, temperature: opts.modelConfig.temperature,
-    maxTokens: opts.modelConfig.maxTokens, budget: opts.budget, runtime: opts.runtime, experimentHash: experimentHash(),
+    maxTokens: opts.modelConfig.maxTokens, budget: opts.budget, runtime: opts.runtime,
+    slots: slots && [...slots].sort(), kitArms, experimentHash: experimentHash(),
   };
   const metaFile = path.join(outDir, 'meta.json');
   if (fs.existsSync(metaFile)) {

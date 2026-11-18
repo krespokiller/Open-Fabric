@@ -17,17 +17,25 @@ export function suiteHashes() {
   return Object.fromEntries(['lib', 'smoke', 'public', 'hidden', 'hidden2'].map((n) => [n, sha256File(path.join(ROOT, 'suites', `${n}.mjs`))]));
 }
 
-// One hash over everything that can change results: task, arm contexts, suites, harness and starting projects.
-// The reference implementations (stacks/*/gold) are excluded: model runs never see them.
-export function experimentHash() {
+// A text file is hashed with CRLF turned into LF, so one commit gives one hash on a checkout with LF and on one with
+// CRLF (Windows with core.autocrlf). A file with a NUL byte is binary and is hashed as it is.
+function hashableBytes(buf) {
+  if (buf.includes(0)) return buf;
+  return Buffer.from(buf.toString('latin1').replace(/\r\n/g, '\n'), 'latin1');
+}
+
+// One hash over everything that can change results: task, arm contexts, suites, harness, starting projects and the
+// reference implementations (stacks/*/gold), because the kit arms install the reference into the workspace.
+// Only dependency and build folders are skipped. `root` is the bench folder; tests pass a small copy of it.
+export function experimentHash(root = ROOT) {
   const h = createHash('sha256');
   const files = [];
   const walk = (rel) => {
-    const abs = path.join(ROOT, rel);
+    const abs = path.join(root, rel);
     if (!fs.existsSync(abs)) return;
     if (fs.statSync(abs).isDirectory()) {
       for (const e of fs.readdirSync(abs).sort()) {
-        if (['node_modules', '.venv', '__pycache__', '.next', 'target', 'vendor', 'gold'].includes(e)) continue;
+        if (['node_modules', '.venv', '__pycache__', '.next', 'target', 'vendor'].includes(e)) continue;
         walk(path.join(rel, e));
       }
     } else files.push(rel);
@@ -35,7 +43,7 @@ export function experimentHash() {
   for (const d of ['task', 'arms', 'suites', 'src', 'stacks']) walk(d);
   for (const f of files) {
     h.update(f.split(path.sep).join('/'));
-    h.update(fs.readFileSync(path.join(ROOT, f)));
+    h.update(hashableBytes(fs.readFileSync(path.join(root, f))));
   }
   return h.digest('hex');
 }

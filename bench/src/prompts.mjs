@@ -48,6 +48,31 @@ export function kitSelectionProblem(stacks, arms, slots = null) {
   return unknown.length ? `unknown slot ${unknown.join(', ')} (slots in the selected stacks: ${known.join(', ')})` : null;
 }
 
+// What a kit run may read of a build or runtime log. The installed code is hidden from the prompt, but a build error
+// can quote it: Next.js prints a code frame of the file that fails, and a Python traceback prints the source line of
+// every frame. Only the lines that concern the slot file are kept, plus one note when errors in other files were left out.
+// A line that names a source location (`file:line`, `file(line,col)` or `File "file", line N`) starts a part that belongs
+// to that file until the next location or a blank line; the code frame and the source line under it follow their owner.
+const LOCATION = /[\w./\-]+\.(?:tsx?|jsx?|mjs|cjs|py|php|java)(?::\d+|\(\d+,\d+\)|", line \d+)/;
+const BACKSLASH = String.fromCharCode(92);
+const LOG_PREFIX = /^(?:#\d+\s+)?\d+\.\d+\s?/; // docker build lines: "#11 10.83 text"
+export function kitFeedbackText(text, slotFile) {
+  if (!text) return text;
+  const slot = slotFile.replaceAll(BACKSLASH, '/');
+  let owner = null; // null: before any location; true: the slot file; false: another file
+  let dropped = false;
+  const kept = [];
+  for (const line of text.split('\n')) {
+    const body = line.replace(LOG_PREFIX, '');
+    if (body.trim() === '') owner = null;
+    else if (LOCATION.test(body)) owner = body.replaceAll(BACKSLASH, '/').includes(slot);
+    if (owner === false) dropped = true;
+    else kept.push(line);
+  }
+  if (dropped) kept.push('Note: errors in other files (installed code) are not shown. Keep the names and signatures of the slot contract.');
+  return kept.join('\n');
+}
+
 export function armApplies(stack, arm) {
   const { slot, kit } = parseArm(arm);
   if (kit) return Boolean(slot && stack.kit?.slots?.[slot]);

@@ -18,7 +18,11 @@ const armsInOrder = (present) => [
   ...[...present.keys()].filter((a) => !ARM_ORDER.includes(a)).sort((a, b) => slotKey(a).localeCompare(slotKey(b))),
 ];
 const armRank = (a) => (ARM_ORDER.includes(a) ? String(ARM_ORDER.indexOf(a)).padStart(2, '0') : `99${slotKey(a)}`);
-const bothSuitesPerfect = (r) => r.hiddenTotal > 0 && r.hiddenPassed === r.hiddenTotal && (!r.hidden2Total || r.hidden2Passed === r.hidden2Total);
+// A run is correct only when it passes every test of both hidden suites. A run without the second suite is not correct.
+const bothSuitesPerfect = (r) => r.hiddenTotal > 0 && r.hiddenPassed === r.hiddenTotal && r.hidden2Total > 0 && r.hidden2Passed === r.hidden2Total;
+// Every check the arm could see passed at the end of the run (the stop rule ends a run exactly then).
+const gaugePassed = (r) => r.stopReason === 'visible_checks_pass';
+const slotOf = (r) => (/^kit-/.test(r.arm) ? r.arm.split('.')[1] || '' : '');
 
 const fmt = (n, d = 0) => (Number.isFinite(n) ? n.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d }) : '—');
 const pm = (xs, d = 0) => (xs.length ? `${fmt(mean(xs), d)} ± ${fmt(sd(xs), d)}` : '—');
@@ -58,12 +62,12 @@ function armRow(arm, rs) {
   const rates = rs.map((r) => (r.hiddenTotal ? (100 * r.hiddenPassed) / r.hiddenTotal : 0));
   const sumPassed = passed.reduce((a, b) => a + b, 0);
   const perPass = sumPassed ? total.reduce((a, b) => a + b, 0) / sumPassed : Infinity;
-  const perfect = rs.filter((r) => r.hiddenTotal && r.hiddenPassed === r.hiddenTotal).length;
+  const perfect = rs.filter(bothSuitesPerfect).length;
   const rates2 = rs.filter((r) => r.hidden2Total).map((r) => (100 * r.hidden2Passed) / r.hidden2Total);
   return `| ${ARM_LABEL[arm] || arm} | ${rs.length} | ${pm(rates, 1)}% | ${rates2.length ? `${pm(rates2, 1)}%` : '—'} | ${perfect}/${rs.length} | ${pm(rs.map((r) => r.promptTokens))} | ${pm(rs.map((r) => r.completionTokens))} | ${pm(total)} | ${Number.isFinite(perPass) ? fmt(perPass) : 'no test passed'} | ${pm(rs.map((r) => r.calls), 1)} | ${pm(rs.map((r) => r.wallMs / 60000), 1)} |`;
 }
 
-const HEADER = '| Arm | Runs | Hidden tests passed | Second hidden suite passed | Fully correct runs | Input tokens | Output tokens | Total tokens | Tokens per passed test | Model calls | Minutes |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |';
+const HEADER = '| Arm | Runs | Hidden tests passed | Second hidden suite passed | Runs passing both suites | Input tokens | Output tokens | Total tokens | Tokens per passed test | Model calls | Minutes |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |';
 
 export function writeReport(dir) {
   const meta = fs.existsSync(path.join(dir, 'meta.json')) ? readJson(path.join(dir, 'meta.json')) : {};
@@ -78,7 +82,7 @@ export function writeReport(dir) {
   if (runs.some((r) => r.tokensEstimated)) lines.push('**Warning:** the model server did not report token usage for some calls; those counts are estimated as characters / 4.\n');
   const suspicious = runs.reduce((a, r) => a + (r.suspiciousUsageCalls || 0), 0);
   if (suspicious) lines.push(`**Warning:** in ${suspicious} call(s) the server reported fewer than half the prompt tokens expected from the prompt length. It may be counting only non-cached tokens or truncating the prompt; compare \`promptTokens\` and \`promptEstimate\` in \`metrics.json\` before publishing.\n`);
-  lines.push('**How to read it.** Every arm gets the same task, the same model, the same maximum number of calls and the same smoke-check feedback. A run stops when every check its arm can see passes, or when the budget runs out. The `tests` arm also sees the 8 public tests; the OpenFabric arms see them plus the piece, so `of-spec` versus `tests` isolates the value of the piece. All arms are judged by the same hidden HTTP suite on a fresh start; no model ever sees it. "Tokens per passed test" is total tokens divided by hidden tests passed, summed over runs. "Second hidden suite passed" comes from an independent suite (tests X01 onward) written from the task alone, without seeing the piece or the primary suite; it checks that the result does not depend on who wrote the judge.');
+  lines.push('**How to read it.** Every arm gets the same task, the same model, the same maximum number of calls and the same smoke-check feedback. A run stops when every check its arm can see passes, or when the budget runs out. The `tests` arm also sees the 8 public tests; the OpenFabric arms see them plus the piece, so `of-spec` versus `tests` isolates the value of the piece. All arms are judged by the same hidden HTTP suite on a fresh start; no model ever sees it. "Tokens per passed test" is total tokens divided by hidden tests passed, summed over runs. "Runs passing both suites" counts the runs that pass every test of both hidden suites. "Second hidden suite passed" comes from an independent suite (tests X01 onward) written from the task alone, without seeing the piece or the primary suite; it checks that the result does not depend on who wrote the judge.');
   lines.push('');
   if (runs.some((r) => r.arm === 'of-code')) {
     lines.push('**About of-code.** Its installed code is the same as the Next.js reference implementation that was validated against the hidden suite, so its pass rate measures how well the model mounts the piece and fills the slot, and is partly correct by construction.');
@@ -183,9 +187,9 @@ export function writeReport(dir) {
   const file = path.join(dir, 'report.md');
   fs.writeFileSync(file, lines.join('\n'));
 
-  const csv = ['stack,arm,run,calls,prompt_tokens,completion_tokens,total_tokens,tokens_estimated,hidden_passed,hidden_total,stop_reason,built_final,wall_ms,model_ms,build_ms,hidden2_passed,hidden2_total'];
+  const csv = ['stack,arm,run,calls,prompt_tokens,completion_tokens,total_tokens,tokens_estimated,hidden_passed,hidden_total,stop_reason,built_final,wall_ms,model_ms,build_ms,hidden2_passed,hidden2_total,slot,gauge_pass,correct'];
   for (const r of runs) {
-    csv.push([r.stack, r.arm, r.run, r.calls, r.promptTokens, r.completionTokens, r.promptTokens + r.completionTokens, r.tokensEstimated, r.hiddenPassed, r.hiddenTotal, r.stopReason, r.builtFinal, r.wallMs, r.modelMs, r.buildMs, r.hidden2Passed ?? '', r.hidden2Total ?? ''].join(','));
+    csv.push([r.stack, r.arm, r.run, r.calls, r.promptTokens, r.completionTokens, r.promptTokens + r.completionTokens, r.tokensEstimated, r.hiddenPassed, r.hiddenTotal, r.stopReason, r.builtFinal, r.wallMs, r.modelMs, r.buildMs, r.hidden2Passed ?? '', r.hidden2Total ?? '', slotOf(r), gaugePassed(r) ? 1 : 0, bothSuitesPerfect(r) ? 1 : 0].join(','));
   }
   fs.writeFileSync(path.join(dir, 'runs.csv'), csv.join('\n') + '\n');
   return file;
