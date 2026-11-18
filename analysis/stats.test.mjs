@@ -965,6 +965,22 @@ describe('readRuns', () => {
     assert.equal(runs[0].correct, true);
   });
 
+  test('a kit arm written as arm.slot is read as the arm and its slot, so two kit arms compare by name', () => {
+    const csv = [
+      `${header},slot,gauge_pass,correct`,
+      'nextjs,kit-tests.cart,1,2,100,50,150,false,21,21,visible_checks_pass,true,1,1,1,26,26,cart,1,1',
+      'nextjs,kit-bare.cart,1,6,100,50,150,false,20,21,budget,true,1,1,1,26,26,cart,0,0',
+      'nextjs,bare,1,6,100,50,150,false,0,21,budget,false,1,1,1,0,26,,0,0',
+      'nextjs,v1.cart,1,6,100,50,150,false,0,21,budget,false,1,1,1,0,26,,0,0',
+    ].join('\n');
+    const runs = S.readRuns(csv);
+    assert.deepEqual(
+      runs.map((r) => [r.arm, r.slot, r.gaugePass, r.correct]),
+      [['kit-tests', 'cart', true, true], ['kit-bare', 'cart', false, false], ['bare', null, false, false], ['v1.cart', null, false, false]],
+    );
+    assert.deepEqual(S.cellsFromRuns(runs, 'kit-tests', 'kit-bare'), [{ stack: 'nextjs', slot: 'cart', xT: 1, nT: 1, xC: 0, nC: 1 }]);
+  });
+
   test('derives the gauge result from visible test counts', () => {
     const csv = 'stack,arm,total_tokens,hidden_passed,hidden_total,visible_passed,visible_total\nd,a,1,1,2,4,4\nd,a,1,2,2,3,4';
     const runs = S.readRuns(csv);

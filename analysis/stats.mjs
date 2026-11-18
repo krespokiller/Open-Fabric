@@ -1002,10 +1002,14 @@ export function readRuns(csv) {
       const total = Number(raw[`${gaugePair}_total`]);
       gaugePass = total > 0 ? Number(raw[`${gaugePair}_passed`]) === total : null;
     }
+    // The harness writes a kit arm as `arm.slot` (kit-bare.cart) and repeats the slot in its own column.
+    // The arm is read without the slot, so `kit-tests` against `kit-bare` compares the two arms slot by slot.
+    const slot = raw.slot === undefined || raw.slot === '' ? null : raw.slot;
+    const arm = slot !== null && raw.arm.endsWith(`.${slot}`) ? raw.arm.slice(0, -slot.length - 1) : raw.arm;
     runs.push({
-      arm: raw.arm,
+      arm,
       stack: raw.stack,
-      slot: raw.slot === undefined || raw.slot === '' ? null : raw.slot,
+      slot,
       seed: toNumber(raw.seed),
       run: toNumber(raw.run),
       correct,
