@@ -46,6 +46,7 @@ docs/          vision, method, thesis registry, decisions, roadmap, instrument a
 experiments/   one record per experiment: design, criteria, data, verdict
 research/      literature and competitor studies
 bench/         the instrument: task, arms, judge, harness and reference implementations
+analysis/      the statistics: decision rule, simulator and analysis of runs.csv
 LICENSE        Apache 2.0
 ```
 

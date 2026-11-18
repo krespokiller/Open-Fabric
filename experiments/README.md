@@ -1,6 +1,6 @@
 # Experiments
 
-**No thesis has a verdict for or against the idea yet.** Three experiments have run. A 7B local model scored zero hidden tests in all 34 full-task runs, in every arm, so nothing could be compared. T8 to T10 were discarded after controls that used no model. The next experiment to run is E04, once its criterion is revised.
+**No thesis has a verdict for or against the idea yet.** Three experiments have run. A 7B local model scored zero hidden tests in all 34 full-task runs, in every arm, so nothing could be compared. T8 to T10 were discarded after controls that used no model. The next experiment to run is E04. Its criteria were revised on 2026-11-18 and its exploratory campaign comes next.
 
 Each folder holds one record. The rules are in [`docs/method.md`](../docs/method.md), the theses in [`docs/theses.md`](../docs/theses.md) and the order of work in [`docs/roadmap.md`](../docs/roadmap.md).
 
@@ -11,7 +11,7 @@ Each folder holds one record. The rules are in [`docs/method.md`](../docs/method
 | [E01](E01-pilot-full-task/README.md) | 2026-11-09 | T1, T2, T3, T4 | `reported` | T1 to T3 `undecidable` (floor effect). T4 never ran | All 18 runs scored 0 of 21 and 0 of 26 hidden tests in every arm, so no arm can be compared |
 | [E02](E02-no-model-controls/README.md) | 2026-11-10 and 11 | T8, T9, T10 | `reported` (control) | None. T8 to T10 `discarded` before running | T8 was met by construction and T9 divided by zero. Two separate hidden suites caught the same rounding error |
 | [E03](E03-exploratory-loop-fixes/README.md) | 2026-11-11 (UTC) | None (exploratory) | `reported` (exploratory) | None | After the loop fixes, 16 of 16 full-task runs still scored zero. The 7B is not an instrument for the full task |
-| [E04](E04-slot-gauge/README.md) | Not run | T11, T12, T13 | `designed` | None yet | Unfilled-slot controls are done and the instrument is committed. The T11 criterion must be revised, four instrument problems are open and the exploratory run is pending |
+| [E04](E04-slot-gauge/README.md) | Not run | T11, T12, T13 | `designed` | None yet | Unfilled-slot controls are done. The criteria were revised on 2026-11-18 (proposed by the assistant) and the four instrument problems are closed. Open: per-attempt judge results, then the exploratory campaign |
 | [E05](E05-line-vs-workshop/README.md) | Not run | T14, T15, T16, T20 | `proposed` | None yet | The central comparison: assembling against writing from scratch, inside the same stack. Arms are an assistant proposal |
 | [E06](E06-piece-questions/README.md) | Not run | T17 | `proposed` | None yet | Do a piece's questions recover the rules a client left out? The harness has no question channel yet |
 | [E07](E07-independent-gauge/README.md) | Not run | T18 | `proposed` | None yet | Does a gauge by another author detect more than the model's own tests? "Detects" is not defined yet |

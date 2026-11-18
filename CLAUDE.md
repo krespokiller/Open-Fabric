@@ -28,7 +28,7 @@ Every arm gets the same task (`bench/task/task.md`, a checkout service) in one o
 # from bench/
 node src/cli.mjs validate-gold --stacks nextjs,django   # references must pass 59/59 per stack (Docker)
 node src/cli.mjs selftest --stacks nextjs,django        # whole loop with a fake model, no tokens
-node --test test/                                       # unit tests of the kit arms
+node --test "test/*.test.mjs"                           # unit tests of the harness (33), no Docker, no model
 node src/cli.mjs run --model <name> --stacks nextjs,django --runs 3 --budget 6
 node src/cli.mjs report results/<dir>
 
@@ -46,8 +46,9 @@ For harness work without Docker: `--runtime native --pg-admin-url postgres://...
 - **Publish every result**, whether it helps the idea or not. Never edit a report to improve a verdict; append dated corrections.
 - **After changing anything in `bench/stacks/`**, run `validate-gold` for that stack; the reference must stay at 59/59.
 - **After changing anything in `bench/src/` or `bench/suites/`**, run the selftest and the unit tests.
+- **After changing anything in `bench/arms/`**, run the unit tests. They include the leak check (`bench/test/arms-leak.test.mjs`), which fails if an amount asserted by a hidden suite appears in any file under `bench/arms/`.
 - **After changing anything in `analysis/`**, run its tests.
-- **Do not change experiment files during or after a campaign you intend to compare.** The harness hashes `task/`, `arms/`, `suites/`, `src/` and `stacks/` and refuses to resume when the hash changes. New changes mean a new results directory.
+- **Do not change experiment files during or after a campaign you intend to compare.** The harness hashes `task/`, `arms/`, `suites/`, `src/` and `stacks/`, which includes the references in `stacks/*/gold` that the kit arms install, and refuses to resume when the hash changes. New changes mean a new results directory. Results directories created before the references entered the hash (2026-11-18) refuse to resume.
 - **Keep the arms comparable.** If you add context to one arm, check that the change is the intended treatment and not an accidental advantage.
 - **Say who decided what.** A criterion or a decision proposed by an assistant is recorded as proposed until the owner confirms it.
 - `bench/results/` is gitignored. The data behind each record (`runs.csv`, the harness report) is copied next to the record after a scan for local paths and hidden-test names.

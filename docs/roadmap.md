@@ -1,21 +1,21 @@
 # Roadmap
 
-The instrument work for E04 is landed on `main`. The next steps are to finish the analysis library and then to run the E04 exploratory run on the local 7B model. Nothing of the product is built, and no product code is written before a gate in the [decision map](decisions.md#decision-map) is met.
+The instrument for E04 is landed on `main` and was hardened on 2026-11-18: the four problems that blocked the preregistration are closed. The next steps are, in this order: the judge result of each attempt, the E04 exploratory campaign on the local 7B model, the preregistration, and the confirmatory campaign. Nothing of the product is built, and no product code is written before a gate in the [decision map](decisions.md#decision-map) is met.
 
 | Horizon | Work | Theses | Waits for |
 | --- | --- | --- | --- |
-| [Now](#now) | Finish the analysis library, then the E04 exploratory run | T11, T12, T13 | The open instrument problems below, and the owner's confirmation of the E04 criteria before the preregistration |
+| [Now](#now) | Per-attempt judge results, then the E04 exploratory campaign, preregistration and confirmatory campaign | T11, T12, T13 | The per-attempt judge results for the exploratory campaign, and the owner's confirmation of the E04 criteria before the preregistration |
 | [Next](#next) | E05 local variant (7B), if the owner chooses it, then E07, E06, E08 | T14 and T20 for the E05 local variant, then T18, T17, T19 | The report of E04, and the exploratory run of each experiment |
 | [Later](#later) | Stronger models, the full E05 (T15 and T16 included), Go as a fifth stack, the frontend gauge | T6, T15, T16, T21, T7 | The owner's decision on model and budget. T14 supported |
 
-This roadmap was proposed by the assistant on 2026-11-17, from the owner's statement of the same day: research first, several theses on several stacks, and decide from the results. The instrument state and the order of the "Now" steps were updated on 2026-11-18. The order of those steps is a proposal of the assistant.
+This roadmap was proposed by the assistant on 2026-11-17, from the owner's statement of the same day: research first, several theses on several stacks, and decide from the results. The instrument state and the order of the "Now" steps were updated on 2026-11-18. The order of those steps is a proposal of the assistant. The owner's standing instruction of 2026-11-17 is to start testing the theses once the path is clear.
 
 ## Where things stand (2026-11-18)
 
 | Item | State |
 | --- | --- |
 | Phase | Validate the thesis before building |
-| Instrument | Validated in Docker in the four stacks. Each reference passes 59 of 59 tests: 4 smoke checks, 8 public tests, and the two hidden suites of 21 and 26. The slot instrument for E04 is committed on `main` and pushed (`759051f`). Four problems stay open, listed under [Now](#now) |
+| Instrument | Validated in Docker in the four stacks. Each reference passes 59 of 59 tests: 4 smoke checks, 8 public tests, and the two hidden suites of 21 and 26. The slot instrument for E04 was committed on `main` in `759051f`, and hardened on 2026-11-18. After the judge client fix, `validate-gold` passed 59 of 59 on Next.js and Django three times in a row, and on Spring Boot and Laravel once. The four problems found after the landing are closed. One item is open: per-attempt judge results, listed under [Now](#now) |
 | Model | Qwen2.5-Coder 7B Instruct, Q4_K_M quantization, on GPU: about 1,400 tokens per second reading and about 55 writing. The exact identifier is in [`../bench/README.md`](../bench/README.md) |
 | Machine | One local RTX 2070 with 8 GB. It only loads the 7B |
 | Whole task with the 7B | 34 runs between the pilot and the exploratory run, about 1.83 million tokens, 0 hidden tests passed. The 7B does not work as the instrument for the whole task |
@@ -34,31 +34,45 @@ Done on 2026-11-17. The work is on `main` in four commits, pushed to origin:
 
 `validate-gold` passed 59 of 59 on Next.js and on Django, and `node --test test/kit.test.mjs` passed 14 of 14. The instrument is described in [`architecture.md`](architecture.md) and [`../bench/README.md`](../bench/README.md).
 
-### 2. Finish the analysis library
+### 2. The analysis library
 
-`analysis/` holds a statistics library with tests. It sits outside `bench/`, so changing the analysis never changes the frozen harness hash. [`model.md`](model.md) is the mathematical model of the claim. The harness report does not compute the verdicts of [`method.md`](method.md), so until the library is finished every verdict is calculated by hand.
+`analysis/` holds the statistics library with its tests (170 on 2026-11-18, run with `node --test analysis/` from the repository root). It sits outside `bench/`, so changing the analysis never changes the frozen harness hash. [`model.md`](model.md) is the mathematical model of the claim. The command `analyze` reads a `runs.csv` and applies the decision rule of [`method.md`](method.md):
 
-### 3. Open instrument problems
+- A kit arm written as `kit-bare.cart` is read as arm `kit-bare` with slot `cart`, so `--treatment kit-tests --control kit-bare` compares the two arms slot by slot.
+- `--stacks` and `--slots` give the planned design, and a planned cell with no runs returns `undecidable`.
 
-These four problems were found after the instrument landed. They belong to the instrument, not to a thesis. The fix in each row is a proposal of the assistant.
+The harness report does not compute the verdicts of `method.md`; the analysis tool does.
 
-| # | Problem | Proposed fix |
+### 3. The instrument problems, and what is next
+
+Four problems were found after the instrument landed. They belong to the instrument, not to a thesis. All four were closed on 2026-11-18, and the record of each is in the open items of [E04](../experiments/E04-slot-gauge/README.md#7-what-changes). A fifth item is open and next.
+
+| # | Problem | State |
 | --- | --- | --- |
-| 1 | **The Django judge is unstable.** On Django the reference judgement failed hidden test X15 with "fetch failed" in 5 of 13 runs. A correct run needs both hidden suites in full, so E04 cannot count Django while this holds | Find the cause and fix it, or exclude the test by a rule written before the run. Repeat `validate-gold --stacks django` several times first |
-| 2 | **The harness hash skips the gold reference.** The kit arms install the reference into the workspace and the judge scores it, so a change to it is not detected | Include `stacks/*/gold` in the hash for arms that install it, before the E04 tag |
-| 3 | **The piece shares example values with one hidden test.** The piece given to the `of-spec` and `of-code` arms (`bench/arms/openfabric/piece.md`) contains example values that one test of the independent suite `hidden2` also asserts, so that suite was not fully independent for those arms. The kit arms do not receive those examples. It is recorded as a limit in [E01](../experiments/E01-pilot-full-task/README.md#6-limits) and [E05](../experiments/E05-line-vs-workshop/README.md#6-limits) | Before any run that gives the piece to a model, change the example values in the piece or the cases of that test, rerun `validate-gold` and record the new hash. Add a check that no literal of the hidden suites appears in an arm context |
-| 4 | **The report counts "fully correct" on one hidden suite.** The harness report counts a fully correct run on `hidden` only, while [`method.md`](method.md) defines a correct run over both suites | Count both suites in the report, or have the analysis library read `runs.csv` and compute it |
+| 1 | **The Django judge was unstable.** On Django the reference judgement failed hidden test X15 with "fetch failed" in 5 of 13 runs | Closed on 2026-11-18. The judge client (`req()` in `bench/suites/lib.mjs`) now sends `Connection: close`. Cause: gunicorn closes an idle keep-alive connection after 2 s and Node fetch reused it. With 16 clients over 90 s on Django, 46 of 1,734 requests failed before and 0 of 1,734 after |
+| 2 | **The harness hash skipped the gold reference.** The kit arms install the reference and the judge scores it | Closed on 2026-11-18. `experimentHash` includes `stacks/*/gold` and hashes text with CRLF turned into LF, so one commit gives one hash on any checkout. Results directories created before this change refuse to resume |
+| 3 | **The piece shared example values with one hidden test.** The piece given to the `of-spec` and `of-code` arms (`bench/arms/openfabric/piece.md`) had example values that one test of the independent suite `hidden2` also asserts. It was recorded as a limit in [E01](../experiments/E01-pilot-full-task/README.md#6-limits) and [E05](../experiments/E05-line-vs-workshop/README.md#6-limits) | Closed on 2026-11-18. The two example rows now use other amounts, and `bench/test/arms-leak.test.mjs` fails if any amount asserted by a hidden suite appears in a file under `bench/arms/`. The new hash must be recorded before a run gives the piece to a model |
+| 4 | **The report counted "fully correct" on one hidden suite** | Closed on 2026-11-18. `bench/src/report.mjs` counts a run as correct only when it passes both suites ("Runs passing both suites"). `runs.csv` gained the columns `slot`, `gauge_pass` and `correct` |
+| 5 | **Per-attempt judge results.** The hidden suites run only at the end of a run, so no arm can be scored at its first attempt (the "calls held equal" rule of [`method.md`](method.md)) and the sensitivity and specificity of the gauge cannot be estimated | Open, and next. It comes before the E04 exploratory campaign |
+
+Other changes of 2026-11-18, none of them a problem found by an experiment:
+
+- **Resume check.** `--slots` and the list of kit arms with their slots are stored in `meta.json` and compared on resume. A resume with another slot list is refused.
+- **Kit feedback.** In a kit run, build output and app logs go through `kitFeedbackText` (`bench/src/prompts.mjs`) before they reach the model. Lines that quote files other than the slot file are removed and replaced by one note. Reason: when a slot does not export the name an installed file imports, Next.js prints a code frame of the installed file, and Python tracebacks quote installed source lines.
+- **The `of-code` arm bug.** The `of-code` prompt was built with `piece.split('## 1.')`, which also matches inside `### 1.1`, so the arm never received the business rules. It was in place when [E01](../experiments/E01-pilot-full-task/README.md) ran (2 `of-code` runs, Next.js). Fixed by cutting the piece by position, with a unit test. The outcome of E01 does not change; a dated correction is in its record.
+- **Unit tests.** `bench/test/` holds 33 tests (`kit.test.mjs`, `harness.test.mjs`, `arms-leak.test.mjs`). The command is `node --test "test/*.test.mjs"` from `bench/`; the form `node --test test/` fails on Node 22 on Windows.
 
 ### 4. Run E04
 
-[E04](../experiments/E04-slot-gauge/README.md) tests the gauge at slot level (T11 to T13) on the local 7B, in Next.js and Django. The next step is its exploratory run, after steps 2 and 3.
+[E04](../experiments/E04-slot-gauge/README.md) tests the gauge at slot level (T11 to T13) on the local 7B, in Next.js and Django. The next step is item 5 above, then its exploratory campaign.
 
 | Step | What happens | State |
 | --- | --- | --- |
-| Controls | The reference with one slot left unfilled, per slot and per stack | Done on 2026-11-11 |
-| Exploratory run | One run per cell, to look for a floor or a ceiling. If `kit-bare` already succeeds almost always, the experiment is redesigned | To do |
-| Revise the criterion | T11 asks for 20 points with 25 runs per arm, which cannot be detected. See [`theses.md`](theses.md#t11-must-be-revised-before-preregistering) | To do |
-| Confirm | The owner confirms the criteria of T11 to T13 | To do |
+| Controls | The reference with one slot left unfilled, per slot and per stack. The reference alone, three times in a row on both stacks | Done on 2026-11-11 and 2026-11-18 |
+| Per-attempt judge results | The instrument judges every attempt, so every arm can be scored at its first attempt and the gauge's sensitivity and specificity can be estimated | To do, next |
+| Exploratory campaign | One run per cell, 20 runs, 10 per arm, in its own results directory. It measures the time per run and looks for a floor or a ceiling. Redesign if `kit-bare` is correct in 9 or more of its 10 runs, or if both arms have zero correct runs at the unfilled-slot level | To do |
+| Revise the criterion | T11 asked for 20 points with 25 runs per arm, which cannot be detected. The assistant proposed on 2026-11-18 d* = 30 points, a stratified exact test, and 100 or 120 runs. See [`theses.md`](theses.md#t11-was-revised-on-2026-11-18) | Proposed, not confirmed |
+| Confirm | The owner confirms the criteria of T11 to T13, and the slot list | To do |
 | Preregister | The tag `prereg/E04` and the harness hash freeze the design | To do |
 | Confirmatory run | On the local 7B | To do |
 | Report | Published whatever the outcome. The registry and this roadmap are updated | To do |
@@ -79,7 +93,7 @@ These four problems were found after the instrument landed. They belong to the i
 
 **Why "correct run" is the metric.** Round 2 was discarded because its criterion was met by construction: it asked for 90% of the hidden tests, and only 7 of the 21 depend on the discount slot. "Correct run" asks for every test. A run with one wrong slot does not count, so `line` can fail.
 
-**A point to settle before preregistering.** With the 7B, `workshop` sits at the floor. [`method.md`](method.md#exploratory-run) redesigns an experiment when the exploratory run shows an arm at 0% or 100%. T16 compares cost per correct run, which is undefined for an arm with no correct runs. The exploratory run of E05 shows whether the 7B scope can be preregistered or whether E05 waits for a stronger model.
+**A point to settle before preregistering.** With the 7B, `workshop` sits at the floor. [`method.md`](method.md#exploratory-campaign) redesigns an experiment when the exploratory run shows an arm at 0% or 100%. T16 compares cost per correct run, which is undefined for an arm with no correct runs. The exploratory run of E05 shows whether the 7B scope can be preregistered or whether E05 waits for a stronger model.
 
 ### Then E07, E06 and E08
 
@@ -146,7 +160,7 @@ The earlier record had a plan in eight phases. Every phase has a place in this r
 
 ## Limits the plan carries
 
-- **Same author.** The line, the pieces and `hidden` have the same author. `hidden2` is independent, except for one test that shares example values with the piece (open problem 3 under "Now").
+- **Same author.** The line, the pieces and `hidden` have the same author. `hidden2` is independent. One test shared example values with the piece until 2026-11-18 (problem 3 under "Now", closed), so E01 carries a limit for the two arms that received the piece.
 - **One base task.** Everything uses the checkout until E08.
 - **Simulated client.** T17 says nothing about a real business person.
 - **One small model.** Every result so far has the scope of one 7B model. A result with a 7B says nothing about a frontier agent.

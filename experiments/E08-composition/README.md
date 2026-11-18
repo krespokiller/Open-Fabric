@@ -76,6 +76,12 @@ Nothing yet. What each verdict would justify is in [`docs/decisions.md`](../../d
 6. **Which model or agent.** The 7B is at the floor on a single full task ([E03](../E03-exploratory-loop-fixes/README.md)).
 7. **Whether it waits for [E05](../E05-line-vs-workshop/README.md).** The plan of 2026-11-16 put it last.
 
+Items 8 to 10 were added on 2026-11-18. They come from [`docs/model.md`](../../docs/model.md) (section 11 and predictions P8, P11 and P12), which states what this experiment must record for the model to be tested.
+
+8. **A field for the authoring cost F.** The record has no place for the tokens spent once to author each piece and its gauge (authoring only). The pieces of the mix do not exist yet (item 1), so this is the first experiment that builds them, and F has to be recorded as they are written. Without it the break-even number of uses N* cannot be computed (P8).
+9. **Dose levels.** P12 lists E08 for the check of the sum law over open slots: runs at 1, 3 and 5 open slots, so that the line is not fitted through two points. The mix has to allow a level with 3 open slots.
+10. **The call budget must grow with the open slots.** P11 (pieces that pass alone pass together, R = 1) is valid only if the budget scales with the open slots (assumption A6). With a shared budget R falls without any interference.
+
 ### What the owner must decide
 
 - **The mix.** The owner named fintech, streaming and gaming as verticals on 2026-11-16; `docs/context.md` uses live sales for this test.

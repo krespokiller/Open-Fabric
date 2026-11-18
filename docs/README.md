@@ -44,7 +44,7 @@ Start with [`vision.md`](vision.md) for the idea and [`method.md`](method.md) fo
 | [E01 pilot, full task](../experiments/E01-pilot-full-task/README.md) | 2026-11-09 | T1 to T4 | Ran. Stopped at 18 of 27 runs. T1 to T3 undecidable |
 | [E02 no-model controls](../experiments/E02-no-model-controls/README.md) | 2026-11-10 and 11 | T8 to T10 | Ran without a model. The three theses were discarded |
 | [E03 exploratory run with loop fixes](../experiments/E03-exploratory-loop-fixes/README.md) | 2026-11-11 (UTC) | None, exploratory | Ran. Floor again |
-| [E04 slot gauge](../experiments/E04-slot-gauge/README.md) | Not run | T11 to T13 | Designed. Runs next |
+| [E04 slot gauge](../experiments/E04-slot-gauge/README.md) | Not run | T11 to T13 | Designed, criteria revised on 2026-11-18. Its exploratory campaign runs next |
 | [E05 line against workshop](../experiments/E05-line-vs-workshop/README.md) | Not run | T14, T15, T16, T20 | Proposed |
 | [E06 piece questions](../experiments/E06-piece-questions/README.md) | Not run | T17 | Proposed |
 | [E07 independent gauge](../experiments/E07-independent-gauge/README.md) | Not run | T18 | Proposed |

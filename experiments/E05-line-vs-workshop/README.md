@@ -90,7 +90,7 @@ None. Nothing is preregistered.
 
 Known before running:
 
-- **Authorship.** The pieces and `hidden` have the same author. `hidden2` is independent, with one exception: the piece given to the `of-spec` and `of-code` arms contains example values that one test of `hidden2` also asserts. For any arm that receives the piece, that suite was not fully independent. The values are not quoted here. They must be changed, and the new hash recorded, before a run gives the piece to a model.
+- **Authorship.** The pieces and `hidden` have the same author. `hidden2` is independent, with one exception: the piece given to the `of-spec` and `of-code` arms contains example values that one test of `hidden2` also asserts. For any arm that receives the piece, that suite was not fully independent. The values are not quoted here. They must be changed, and the new hash recorded, before a run gives the piece to a model. Update of 2026-11-18: the two example rows of the piece now use other amounts, and a unit test (`bench/test/arms-leak.test.mjs`) fails if any amount asserted by a hidden suite appears under `bench/arms/`. The new hash is still to be recorded when a run uses the piece.
 - **One base task**, the checkout.
 - **Real agents cost money and change.** A model changes between runs that are months apart.
 - **Help for agents shrinks with each model generation.** A result in favour today may not hold.
@@ -115,6 +115,13 @@ Nothing yet. What each verdict would justify is in [`docs/decisions.md`](../../d
 6. The criteria. T15's has two parts and no size: "more correct runs" is met by a difference of one run. T14 asks for 20 points and its runs are not set.
 7. How to keep calls and context equal across arms.
 8. Whether dollars apply. T16 names them, and a local model has no price.
+
+Items 9 to 12 were added on 2026-11-18. They come from [`docs/model.md`](../../docs/model.md) (section 11 and predictions P5, P8, P11, P12 and P13b), which states what this experiment must record for the model to be tested.
+
+9. **A field for the authoring cost F.** The record has no place for the tokens spent once to author a piece and its gauge (authoring only). Without it the break-even number of uses N* cannot be computed (P8).
+10. **A dose level with 3 open slots.** With runs at 1 and 5 open slots, any two points lie on a line, so the sum law of P12 cannot fail. A test needs a third level, 3 open slots, with the call budget scaled to the open slots (assumption A6, also needed for P11). One open slot comes from [E04](../E04-slot-gauge/README.md) and five from the `line` arm of the local variant.
+11. **A specified `workshop-gauge` arm and a d* for T15.** Question 4 asks what the visible gauge is. Separately, T15's criterion has no size, so it can come out `supported` or `undecidable` and never `refuted` (P5). It needs a d* before preregistering.
+12. **The glue-check result of each workshop run.** For each run of `workshop` and `workshop-gauge`, whether the project built, started and passed the health check. This gives the glue rate per stack that P13b and assumption A7 need.
 
 ### What the owner must decide
 

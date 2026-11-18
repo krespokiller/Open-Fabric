@@ -46,6 +46,7 @@ docs/          visión, método, registro de tesis, decisiones, hoja de ruta, ar
 experiments/   un registro por experimento: diseño, criterios, datos, veredicto
 research/      estudios de literatura y de competidores
 bench/         el instrumento: tarea, brazos, juez, harness e implementaciones de referencia
+analysis/      la estadística: regla de decisión, simulador y análisis de runs.csv
 LICENSE        Apache 2.0
 ```
 
