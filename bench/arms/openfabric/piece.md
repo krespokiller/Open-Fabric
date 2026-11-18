@@ -27,8 +27,8 @@ if r > 5 or (r == 5 and q is odd): q = q + 1
 | new, 10% | yes | 15,000,000 | 1,500,000 | 13,500,000 |
 | new, capped | yes | 40,000,000 | 3,000,000 | 37,000,000 |
 | new, below threshold | yes | 5,000,000 | 0 | 5,000,000 |
-| half-even rounds up to even | yes | 12,345,675 | 1,234,568 | 11,111,107 |
-| half-even stays on even | yes | 12,345,665 | 1,234,566 | 11,111,099 |
+| half-even rounds up to even | yes | 21,098,775 | 2,109,878 | 18,988,897 |
+| half-even stays on even | yes | 19,876,545 | 1,987,654 | 17,888,891 |
 
 ### 1.2 Invariants
 

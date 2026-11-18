@@ -10,7 +10,7 @@
     "validate-gold": "node src/cli.mjs validate-gold",
     "bench": "node src/cli.mjs run",
     "selftest": "node src/cli.mjs selftest",
-    "test": "node --test test/kit.test.mjs",
+    "test": "node --test \"test/*.test.mjs\"",
     "report": "node src/cli.mjs report"
   }
 }
