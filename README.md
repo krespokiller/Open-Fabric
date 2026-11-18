@@ -31,15 +31,25 @@ The gauge is what makes parts interchangeable: without it you are still in the s
 
 ## First step: does it actually help?
 
-[`bench/`](bench) is the experiment. A small model builds the same checkout service in Next.js, Django, Spring Boot and Laravel, with and without an OpenFabric piece, and two hidden suites judge every result: 21 HTTP tests, plus 26 written independently from the task alone. It measures tokens per passed test. See [bench/README.md](bench/README.md).
+The idea makes three promises: fewer tokens to reach correct software, vague prompts that still work, and any stack. Each one is a thesis to test, not a fact. The research is the means; the end is a decision about what to build.
+
+**How it is tested.** Every claim is a numbered thesis with a success criterion written before the experiment runs. Controls that need no model show the experiment can fail, an exploratory run looks for floors and ceilings, and the result is published whether it helps the idea or not. The full protocol is in [docs/method.md](docs/method.md).
+
+**The instrument.** [`bench/`](bench) builds the same checkout service in Next.js, Django, Spring Boot and Laravel under different treatments, and two hidden suites judge every result: 21 HTTP tests, plus 26 written independently from the task alone. A stack is an experimental factor here; the product stack is chosen from the results. See [bench/README.md](bench/README.md).
+
+**Where it stands.** Every full-task run with a 7B local model scored zero on the hidden suites, in every arm, so the first theses are undecidable. The next experiment tests the gauge on one business rule at a time. The verdicts are in [docs/theses.md](docs/theses.md) and the records in [experiments/](experiments).
 
 ## Repository layout
 
 ```
-bench/      the experiment: task, arms, judge, harness and reference implementations
-docs/       context and decisions
-LICENSE     Apache 2.0
+docs/          vision, method, thesis registry, decisions, roadmap, instrument architecture
+experiments/   one record per experiment: design, criteria, data, verdict
+research/      literature and competitor studies
+bench/         the instrument: task, arms, judge, harness and reference implementations
+LICENSE        Apache 2.0
 ```
+
+Start with [docs/README.md](docs/README.md).
 
 ## License
 

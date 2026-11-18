@@ -1,5 +1,7 @@
 # Contexto y decisiones
 
+> **Archivado el 2026-11-18.** Este fue el registro único del proyecto hasta esa fecha y se conserva porque los registros de experimentos lo citan. Ya no se actualiza. Su contenido vive ahora, en inglés, en [`README.md`](README.md), [`vision.md`](vision.md), [`theses.md`](theses.md), [`decisions.md`](decisions.md), [`roadmap.md`](roadmap.md), [`../experiments/`](../experiments/) y [`../research/`](../research/). La nota sobre las promesas 1 y 3 en la sección "La tesis" fue una recomendación del asistente, no una decisión del dueño: las tres promesas siguen como tesis por probar.
+
 Registro de cómo llegamos aquí, para retomar el trabajo sin repetir discusiones. Lo más nuevo va arriba.
 
 ## Estado actual (2026-11-16)
@@ -34,7 +36,7 @@ Registro de cómo llegamos aquí, para retomar el trabajo sin repetir discusione
 
 ### Qué dice la investigación
 
-Informe completo en `reports/Competidores del framework AI first.md`, con notas en `research_notes/` (ambos sin commitear). La búsqueda fue en inglés y no ve productos cerrados: lo que dice es "no encontrado", no "no existe".
+Informe completo en `research/2026-11-competitors/report.es.md`, con notas en `research/2026-11-competitors/notes/`. La búsqueda fue en inglés y no ve productos cerrados: lo que dice es "no encontrado", no "no existe".
 
 | Punto | Evidencia | Consecuencia |
 | --- | --- | --- |
@@ -161,7 +163,7 @@ Comparación secundaria de T1: `of-spec` contra `docs`.
 
 ## Controles sin modelo y corrida exploratoria (2026-11-10 y 11)
 
-**Controles sin modelo.** Se tomó la referencia validada, se cambió solo la función de descuento y se pasó por las dos suites ocultas en Docker. Resultados en `D:\tmp\of-bench\controles` (fuera de git).
+**Controles sin modelo.** Se tomó la referencia validada, se cambió solo la función de descuento y se pasó por las dos suites ocultas en Docker. Los resultados se guardan fuera del repositorio.
 
 | Hueco de descuento | Stack | `hidden` | `hidden2` | Tokens de modelo |
 | --- | --- | --- | --- | --- |

@@ -31,15 +31,25 @@ El calibre es lo que hace intercambiables las piezas: sin él seguís en el tall
 
 ## Primer paso: ¿de verdad ayuda?
 
-[`bench/`](bench) es el experimento. Un modelo pequeño construye el mismo servicio de checkout en Next.js, Django, Spring Boot y Laravel, con y sin una pieza de OpenFabric, y dos suites ocultas juzgan cada resultado: 21 tests HTTP y otros 26 escritos de forma independiente, solo a partir de la tarea. Mide tokens por test pasado. Ver [bench/README.es.md](bench/README.es.md).
+La idea hace tres promesas: menos tokens para llegar a software correcto, prompts vagos que igual funcionan y cualquier stack. Cada una es una tesis por probar, no un hecho. La investigación es el medio; el fin es decidir qué construir.
+
+**Cómo se prueba.** Cada afirmación es una tesis numerada, con un criterio de éxito escrito antes de correr el experimento. Controles que no usan modelo muestran que el experimento puede fallar, una corrida exploratoria busca pisos y techos, y el resultado se publica ayude o no a la idea. El protocolo completo está en [docs/method.md](docs/method.md) (en inglés).
+
+**El instrumento.** [`bench/`](bench) construye el mismo servicio de checkout en Next.js, Django, Spring Boot y Laravel bajo distintos tratamientos, y dos suites ocultas juzgan cada resultado: 21 tests HTTP y otros 26 escritos de forma independiente, solo a partir de la tarea. Aquí el stack es un factor del experimento; el stack del producto se elige con los resultados. Ver [bench/README.es.md](bench/README.es.md).
+
+**Dónde está.** Todas las corridas de la tarea completa con un modelo local de 7B sacaron cero en las suites ocultas, en todos los brazos, así que las primeras tesis quedaron indecidibles. El siguiente experimento prueba el calibre sobre una regla de negocio a la vez. Los veredictos están en [docs/theses.md](docs/theses.md) y los registros en [experiments/](experiments).
 
 ## Estructura
 
 ```
-bench/      el experimento: tarea, brazos, juez, harness e implementaciones de referencia
-docs/       contexto y decisiones
-LICENSE     Apache 2.0
+docs/          visión, método, registro de tesis, decisiones, hoja de ruta, arquitectura del instrumento
+experiments/   un registro por experimento: diseño, criterios, datos, veredicto
+research/      estudios de literatura y de competidores
+bench/         el instrumento: tarea, brazos, juez, harness e implementaciones de referencia
+LICENSE        Apache 2.0
 ```
+
+La documentación está en inglés. Empieza por [docs/README.md](docs/README.md).
 
 ## Licencia
 
