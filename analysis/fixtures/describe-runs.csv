@@ -1,0 +1,7 @@
+stack,arm,run,calls,prompt_tokens,completion_tokens,total_tokens,built_final,slot,gauge_pass,hidden_passed,hidden_total
+django,kit-bare.cart,1,1,100,10,110,true,cart,1,5,5
+django,kit-bare.cart,2,1,100,10,110,true,cart,1,3,5
+django,kit-bare.ledger,1,1,100,10,110,false,ledger,0,0,5
+django,kit-tests.cart,1,2,200,20,220,true,cart,1,5,5
+django,kit-tests.cart,2,2,200,20,220,true,cart,0,3,5
+django,kit-tests.ledger,1,1,100,10,110,true,ledger,1,5,5

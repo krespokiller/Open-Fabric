@@ -75,6 +75,19 @@ In formulas. Strata are stack x slot, a cell is arm x stratum, d* is the smalles
 
 `supported` means D > 0 with d* not excluded; it does not mean D >= d*. "20 points at 80% power within 200 runs" is not claimed. A refutation near the floor means the task was too hard, not that the treatment is useless. Section 10 of `SPEC.md` lists everything that must not be claimed.
 
+## Describe
+
+```
+node analysis/describe.mjs <runs.csv> [--attempts <attempts.csv>]
+```
+
+Read-only descriptive tables in Markdown, no verdict; `cli.mjs analyze` is untouched. Arms, stacks and slots are whatever the file contains.
+
+- Per pair of stack and slot: for each arm, `k of n` correct runs, runs whose gauge passed, and runs whose decision is right.
+- Agreement inside a cell: per arm, the cells, the cells with 2 or more runs, the cells where all runs agree on correct and on gauge, and the mixed cells; "not estimable with one run per cell" when no cell has 2 runs.
+- Detection per run: of the wrong runs, those that never built, those built and rejected, the silent defects, and the detection rate with its 95% Wilson interval.
+- The loop (needs `--attempts`): runs, attempts, runs with more than one attempt, gauge and judge results that changed between the first and last attempt, tokens of first and of all attempts, and the share spent after the first attempt.
+
 ## Functions
 
 `stats.mjs`

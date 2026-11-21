@@ -1,0 +1,5 @@
+stack,arm,slot,run,attempt,built,visible_passed,visible_total,gauge_pass,judge_correct,prompt_tokens,completion_tokens
+django,kit-bare.cart,cart,1,1,1,4,4,1,1,100,10
+django,kit-bare.cart,cart,2,1,1,4,4,1,0,100,10
+django,kit-tests.cart,cart,1,1,1,3,4,0,0,100,10
+django,kit-tests.cart,cart,1,2,1,4,4,1,1,100,10
