@@ -1,0 +1,11 @@
+stack,slot,built,smoke_passed,smoke_total,public_passed,public_total,hidden_passed,hidden_total,hidden2_passed,hidden2_total,hash
+nextjs,discount,true,3,4,2,8,4,21,6,26,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,cart,true,3,4,0,8,2,21,5,26,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,signature,true,4,4,5,8,15,21,16,26,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,webhook,true,4,4,6,8,16,21,17,26,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,ledger,true,4,4,7,8,18,21,18,26,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+django,discount,true,3,4,2,8,4,21,6,26,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+django,cart,true,3,4,0,8,2,21,5,26,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+django,signature,true,4,4,5,8,15,21,16,26,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+django,webhook,true,4,4,6,8,16,21,17,26,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+django,ledger,true,4,4,7,8,18,21,18,26,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60

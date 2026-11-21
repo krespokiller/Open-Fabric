@@ -1,23 +1,23 @@
 # E04: Gauge at slot level
 
-**Designed, exploratory campaign done on 2026-11-18, not preregistered, confirmatory campaign not run.** The tool installs the whole reference service and leaves one slot: a pure function with one business rule. The model writes only that function, with or without the gauge in view. The exploratory campaign of 20 runs gave both arms the same 4 of 10 correct runs; with the gauge in view the model's wrong code was detected far more often and never repaired (section 3). Those runs carry no verdict. On 2026-11-18 the assistant revised the criteria of T11, T12 and T13 and, after the exploratory campaign, proposed T22 (section 1). The instrument problems listed before are closed (section 7). The preregistration waits for one thing: the owner's confirmation of the criteria. The owner's standing instruction of 2026-11-17 is to start testing the theses once the path is clear.
+**Preregistered on 2026-11-21 with the tag `prereg/E04`. The confirmatory campaign of 100 runs starts after the tag and has no result yet.** The tool installs the whole reference service and leaves one slot: a pure function with one business rule. The model writes only that function, with or without the gauge in view. The exploratory campaign of 20 runs gave both arms the same 4 of 10 correct runs; with the gauge in view the model's wrong code was detected far more often and never repaired (section 3). Those runs carry no verdict. On 2026-11-18 the assistant revised the criteria of T11, T12 and T13 and, after the exploratory campaign, proposed T22 (section 1). The instrument problems listed before are closed (section 7). The owner confirmed the criteria, the plan and the slot list on 2026-11-21 (section 7). The unfilled-slot control was repeated on the frozen instrument the same day and gave the table of 2026-11-11 again (section 3).
 
 | Field | Value |
 | --- | --- |
-| Status | `designed` |
-| Kind | confirmatory, planned |
-| Dates | Not run. Designed on 2026-11-11 |
+| Status | `preregistered` |
+| Kind | confirmatory |
+| Dates | Designed on 2026-11-11. Preregistered on 2026-11-21. The confirmatory campaign starts after the tag |
 | Theses | T11, T12, T13 and T22, defined in [`docs/theses.md`](../../docs/theses.md) |
 | Research questions | RQ1 Gauge |
 | Scope | Planned: Next.js and Django; Qwen2.5-Coder 7B (Q4_K_M) on a local GPU; five slots of the checkout task |
-| Tag and hash | None yet |
-| Data | Exploratory campaign: [`data/exploratory/`](data/exploratory/). No confirmatory data yet. The control results of 2026-11-11 are kept outside the repository and carried here from [`docs/context.md`](../../docs/context.md) |
+| Tag and hash | Tag `prereg/E04`. Harness hash `3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60` |
+| Data | Exploratory campaign: [`data/exploratory/`](data/exploratory/). Unfilled-slot control of 2026-11-21: [`data/control-unfilled/`](data/control-unfilled/). No confirmatory data yet. The control results of 2026-11-11 are kept outside the repository and carried here from [`docs/context.md`](../../docs/context.md) |
 
 This experiment is called "Ronda 3" in `docs/context.md`. The task notes behind it are working notes kept outside the repository.
 
 ## 1. Verdict per thesis
 
-None yet. The criteria below were proposed by the assistant on 2026-11-18, replacing the ones proposed on 2026-11-11, and the owner has not confirmed them. The decision rule is the one in [`docs/method.md`](../../docs/method.md#the-decision-rule), implemented in [`analysis/`](../../analysis/README.md).
+None yet. The criteria below were proposed by the assistant on 2026-11-18, replacing the ones proposed on 2026-11-11. The owner confirmed them on 2026-11-21 (section 7) and the tag `prereg/E04` fixes them. The decision rule is the one in [`docs/method.md`](../../docs/method.md#the-decision-rule), implemented in [`analysis/`](../../analysis/README.md).
 
 | Thesis | Claim | Primary comparison and proposed criterion | Verdict |
 | --- | --- | --- | --- |
@@ -35,7 +35,22 @@ None yet. The criteria below were proposed by the assistant on 2026-11-18, repla
 **Why T12 and T13 are secondary.** They are read from the same runs and get no sample size of their own. With about 10 to 12 runs in the discount cell, T12 will often be `undecidable`; that is stated in advance. T13 is `undecidable` whenever one arm has no correct run.
 ## 2. Design as preregistered
 
-Not preregistered. Everything here can still change.
+Preregistered on 2026-11-21. The tag `prereg/E04` marks the commit that holds this record. A change after the tag means a new experiment number.
+
+| Frozen item | Value |
+| --- | --- |
+| Tag | `prereg/E04` |
+| Harness hash | `3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60`, the same instrument as the exploratory campaign |
+| Results directory | `bench/results/E04-slot-gauge-confirmatory`, used only for this campaign. Git ignores it; the data is copied to `data/confirmatory/` when the campaign ends |
+| Launch command, from `bench/` | `node src/cli.mjs run --model "hf.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M" --base-url http://localhost:12434/engines/v1 --stacks nextjs,django --arms kit-bare,kit-tests --slots discount,cart,signature,webhook,ledger --runs 5 --budget 6 --out results/E04-slot-gauge-confirmatory` |
+| Settings | Temperature 0.2, at most 8,192 output tokens, call budget 6, Docker runtime. The harness writes them to `meta.json` and refuses to resume with other values |
+| Looks | One, after the 100 runs. A campaign that stops early is resumed with the same command and directory; nothing is analysed before the 100 runs exist |
+| Operation | The machine has 16 GB of memory, and the model and Docker fill it. During the campaign the file cache of the Docker virtual machine is dropped every few minutes to keep memory free. This can lengthen build times; it does not change what the model receives or what the judge scores |
+| Analysis of T11, from the repository root | `node analysis/cli.mjs analyze <runs.csv> --treatment kit-tests --control kit-bare --d-star 30 --looks 5 --z-r 2.05 --stacks nextjs,django --slots discount,cart,signature,webhook,ledger --attempts <attempts.csv>` |
+| Analysis of T22 | The same command with `--outcome decision-right` |
+| Analysis of T12 and T13 | Read from the same output: the "Gauge against judge" row of `kit-tests` and `discount`, and the cost per correct run of `kit-tests` over `kit-bare` |
+
+Both analysis commands were run on the exploratory files on 2026-11-21 to check that they parse. They answered `undecidable` with the cause "unplanned look", as they must for 1 run per cell.
 
 Since everything outside the slot is the reference, any hidden test that fails is caused by the slot. This is the measurable version of "the tool assembles, the model makes the small part, the gauge judges".
 
@@ -46,7 +61,7 @@ Since everything outside the slot is the reference, any hidden test that fails i
 | Arms | `kit-bare` and `kit-tests` (table below). One slot per run; every other slot holds the reference code |
 | Stacks | Next.js and Django |
 | Model | Qwen2.5-Coder 7B (Q4_K_M). The owner stated that only the local machine is available (working notes kept outside the repository) |
-| Runs per cell | 5 per cell in one look: 100 runs, about 5 hours at the 178 s per run of the exploratory campaign. Cells are arm by slot by stack: 20 cells. Proposed on 2026-11-18 after the exploratory campaign; the alternative was 3 then 6 per cell in two looks (120 runs at most). For this plan `node analysis/cli.mjs design --d-star 30 --looks 5` gives z_R = 2.05, `supported` 81% to 92% of the time at a true difference of 30 points, `refuted` 82% of the time at no difference, a worst false refutation of 2.4% and a worst false support of 1.7% |
+| Runs per cell | 5 per cell in one look: 100 runs, about 5 hours at the 178 s per run of the exploratory campaign. Cells are arm by slot by stack: 20 cells. Proposed on 2026-11-18 after the exploratory campaign and confirmed by the owner on 2026-11-21; the alternative was 3 then 6 per cell in two looks (120 runs at most). For this plan `node analysis/cli.mjs design --d-star 30 --looks 5` gives z_R = 2.05, `supported` 81% to 92% of the time at a true difference of 30 points, `refuted` 82% of the time at no difference, a worst false refutation of 2.4% and a worst false support of 1.7% |
 | Call budget | 6, as in [E01](../E01-pilot-full-task/README.md) and [E03](../E03-exploratory-loop-fixes/README.md). The arms stop at different points on purpose: the gauge loop (keep working while a visible check fails) is part of the treatment, and this record says so |
 | Primary metric | Correct run: every test of `hidden` and of `hidden2` passes |
 | Secondary metrics | Calls and tokens per arm; runs that pass every visible check and fail a hidden test. The first-attempt comparison at equal calls (the rule "calls held equal" of [`docs/method.md`](../../docs/method.md)) is available as a secondary result, since 2026-11-18, when the instrument records per-attempt judge results. `analyze` prints "At the first attempt (calls held equal)" for two arms |
@@ -68,23 +83,43 @@ Since everything outside the slot is the reference, any hidden test that fails i
 - A resume with another slot list is refused.
 - Every attempt that builds and starts is judged by both hidden suites, without the model seeing the result (item 10).
 - In a kit run, build output and app logs lose the lines that quote installed files (`kitFeedbackText` in `bench/src/prompts.mjs`), because a code frame of an installed file would show the model code it cannot edit.
-- `bench/test/` holds 56 unit tests; the command is `node --test "test/*.test.mjs"` from `bench/`.
+- `bench/test/` holds 56 unit tests; the command is `node --test "test/*.test.mjs"` from `bench/`. Since 2026-11-21 it holds 73, with the tests of the unfilled-slot control script.
 
 `validate-gold` passed 59 of 59 on Next.js and Django three times in a row. The exploratory campaign of the kit arms ran on 2026-11-18 on harness hash `3b3adef503d66d97` (section 3). No instrument item is open: the judge result of each attempt is recorded (item 10, closed).
+
+### Written before the run (2026-11-21)
+
+Added by the assistant before the tag. Nothing here changes a criterion or the decision rule.
+
+**What the verdicts are about.** These ten pairs of stack and slot, and this model. Stack and slot are strata of the test, not a sample of slots, so a verdict does not extend to slots in general.
+
+**What T22 compares.** The two arms have different gauges: 4 checks in `kit-bare` and 12 in `kit-tests`. T22 compares the two treatments as wholes: what the model sees, and the size of the gauge that decides. It does not separate the two.
+
+**Reported next to the verdicts, with no verdict of their own:**
+
+- **Detection per run.** Of the wrong runs of each arm, how many end without the gauge passing, split into runs that never built and runs that built. The per-attempt sensitivity counts a repeated wrong answer once per attempt, so it is read next to this count.
+- **Agreement inside a cell.** In how many of the 20 cells the 5 runs all have the same correct-or-wrong result. If cells are close to deterministic, the information is in the ten pairs and more runs per cell add little.
+- **The loop.** How many runs change their gauge result or their judge result after the first attempt, and the tokens of the first attempt per arm.
+
+**Expectations of the assistant. They are not results.**
+
+- T11 is expected to end `refuted` for this model: the exploratory difference was zero in every pair.
+- T22 is expected to show a difference between 20 and 30 points, most of it from `signature`, and may end `undecidable`. In the exploratory runs `kit-tests` had 6 wrong runs: the public tests rejected 2 (both `signature`), 2 never built, and 2 passed the 12 checks.
+- The loop is expected to repair few runs or none.
 
 ## 3. Controls and the exploratory run
 
 | Control | Result |
 | --- | --- |
 | Reference | Done. After the split into slot files the reference passes 59 of 59 in Next.js and in Django (working notes kept outside the repository; repeated on commit `759051f`). Repeated three times in a row on 2026-11-18, after the judge client fix, with 59 of 59 on both stacks each time |
-| Empty | Done on 2026-11-11. Table below |
+| Empty | Done on 2026-11-11 and repeated on 2026-11-21 on the frozen instrument, with the same result. Table below |
 | Can it fail | Yes. In the exploratory campaign each arm had 4 correct runs and 6 wrong ones, so neither arm sits at the floor or the ceiling |
 | Denominator | Written in the revised criteria of 2026-11-18. T13 is `undecidable` when either arm has no correct run, and T12 is "not estimable" when no run passes the gauge |
 | Exploratory campaign | Done on 2026-11-18. 1 run per cell, 20 runs, 10 per arm (the method asks for at least five per arm). Results below |
 
 ### Unfilled-slot control
 
-The reference with one slot left unfilled, per slot and stack. Ten controls ran. The results are identical in Next.js and Django.
+The reference with one slot left unfilled, per slot and stack. Ten controls ran on 2026-11-11. They ran again on 2026-11-21 with `bench/controls/unfilled-slots.mjs`, on harness hash `3b3adef503d66d97`, and the hash was the same before and after. Both times the ten results were the ones in this table, identical in Next.js and Django. The rows of 2026-11-21 are in [`data/control-unfilled/unfilled-slots.csv`](data/control-unfilled/unfilled-slots.csv).
 
 | Unfilled slot | Basic checks | Public tests | `hidden` | `hidden2` |
 | --- | --- | --- | --- | --- |
@@ -170,7 +205,7 @@ Not run yet.
 
 ## 5. Deviations from the preregistration
 
-None. Nothing is preregistered.
+None so far.
 
 ## 6. Limits
 
@@ -190,11 +225,11 @@ Nothing yet. The result will be read against [`docs/decisions.md`](../../docs/de
 
 ### Open items before preregistering
 
-State on 2026-11-18. Closed items stay in the table with the date and how they were closed.
+State on 2026-11-21: every item is closed. Closed items stay in the table with the date and how they were closed.
 
 | # | Item | State |
 | --- | --- | --- |
-| 1 | **Revise the T11 criterion.** The earlier one asked for 20 points with 25 runs per arm in each stack. The table in [`docs/method.md`](../../docs/method.md) says 25 runs per arm detect about 39 points, and 50 per arm (both stacks pooled) about 28. A 20-point difference needs 62 to 97 runs per arm. `docs/method.md` does not allow preregistering a criterion the runs cannot detect | Answered by the revision of 2026-11-18 (section 1): d* of 30 points, stratified exact test, 100 or 120 runs. Awaits the owner's confirmation |
+| 1 | **Revise the T11 criterion.** The earlier one asked for 20 points with 25 runs per arm in each stack. The table in [`docs/method.md`](../../docs/method.md) says 25 runs per arm detect about 39 points, and 50 per arm (both stacks pooled) about 28. A 20-point difference needs 62 to 97 runs per arm. `docs/method.md` does not allow preregistering a criterion the runs cannot detect | Answered by the revision of 2026-11-18 (section 1): d* of 30 points, stratified exact test, 100 runs in one look. Confirmed by the owner on 2026-11-21 |
 | 2 | **Run the exploratory campaign.** If `kit-bare` is already near 100%, or both arms are near 0%, the design cannot discriminate and is redesigned before the tag | Closed on 2026-11-18. 20 runs, 4 of 10 correct in each arm. The redesign rule did not trigger (section 3) |
 | 3 | Fix the call budget. It was not written, and the arms stop at different points | Settled as proposed on 2026-11-18: 6 calls. The different stopping points are part of the treatment |
 | 4 | Define T13 when `kit-tests` has no correct runs | Settled as proposed on 2026-11-18: T13 is a ratio of tokens per correct run, and `undecidable` when either arm has none |
@@ -217,7 +252,10 @@ The three ways out of item 1 that the assistant listed on 2026-11-11 are kept fo
 
 The revision of 2026-11-18 follows the second option: it reads the counts stratified by stack and slot, as the verdict rule in `docs/method.md` does, asks for a positive difference in every stack, and raises the criterion to 30 points.
 
-### What the owner must decide
+### The owner's confirmation (2026-11-21)
 
-- **The criteria of T11, T12, T13 and T22** as proposed on 2026-11-18: d* of 30 points for T11 and T22, the T12 interval rule and the T13 ratio rule, with one look of 5 runs per cell (100 runs). They are proposals until confirmed.
-- **The slot list.** The proposal the owner approved on 2026-11-11 named discount, idempotency, webhook signature, ledger entry and stock reservation. The design uses five pure functions instead and leaves idempotency and stock reservation installed. That substitution is an assumption by the assistant, recorded in working notes kept outside the repository, and still needs the owner's confirmation.
+Between 2026-11-18 and 2026-11-21 the assistant explained to the owner the criteria, the plan, the slot list and what the exploratory runs can and cannot show, and asked whether the owner confirmed the criteria as written so that the record could be tagged and the campaign started. On 2026-11-21 the owner answered with the instruction to go ahead and run the experiment. The assistant records that answer as the owner's confirmation of:
+
+- **The criteria of T11, T12, T13 and T22** as proposed on 2026-11-18: d* of 30 points for T11 and T22, the T12 interval rule and the T13 ratio rule.
+- **The plan:** one look of 5 runs per cell, 100 runs.
+- **The slot list.** The proposal the owner approved on 2026-11-11 named discount, idempotency, webhook signature, ledger entry and stock reservation. The design uses five pure functions (`discount`, `cart`, `signature`, `webhook`, `ledger`) and leaves idempotency and stock reservation installed, because they live in SQL. That substitution was an assumption by the assistant until this confirmation.

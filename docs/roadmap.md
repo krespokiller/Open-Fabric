@@ -1,10 +1,10 @@
 # Roadmap
 
-The instrument for E04 is landed on `main` and was hardened on 2026-11-18: the four problems that blocked the preregistration are closed. The judge result of each attempt has been recorded since 2026-11-18. The E04 exploratory campaign ran on 2026-11-18 on the local 7B model: both arms had 4 of 10 runs correct, with no verdict. The next steps are, in this order: the owner's confirmation of the criteria, the preregistration, and the confirmatory campaign. Nothing of the product is built, and no product code is written before a gate in the [decision map](decisions.md#decision-map) is met.
+The instrument for E04 is landed on `main` and was hardened on 2026-11-18: the four problems that blocked the preregistration are closed. The judge result of each attempt has been recorded since 2026-11-18. The E04 exploratory campaign ran on 2026-11-18 on the local 7B model: both arms had 4 of 10 runs correct, with no verdict. The owner confirmed the E04 criteria, and E04 was preregistered on 2026-11-21 with the tag `prereg/E04`. The next step is the confirmatory campaign of 100 runs and its analysis. Nothing of the product is built, and no product code is written before a gate in the [decision map](decisions.md#decision-map) is met.
 
 | Horizon | Work | Theses | Waits for |
 | --- | --- | --- | --- |
-| [Now](#now) | The E04 preregistration and confirmatory campaign (the exploratory campaign ran on 2026-11-18) | T11, T12, T13, T22 | The owner's confirmation of the E04 criteria before the preregistration |
+| [Now](#now) | The E04 confirmatory campaign of 100 runs and its analysis (preregistered on 2026-11-21; the exploratory campaign ran on 2026-11-18) | T11, T12, T13, T22 | Nothing. The tag `prereg/E04` is set |
 | [Next](#next) | E05 local variant (7B), if the owner chooses it, then E07, E06, E08 | T14 and T20 for the E05 local variant, then T18, T17, T19 | The report of E04, and the exploratory run of each experiment |
 | [Later](#later) | Stronger models, the full E05 (T15 and T16 included), Go as a fifth stack, the frontend gauge | T6, T15, T16, T21, T7 | The owner's decision on model and budget. T14 supported |
 
@@ -71,9 +71,9 @@ Other changes of 2026-11-18, none of them a problem found by an experiment:
 | Controls | The reference with one slot left unfilled, per slot and per stack. The reference alone, three times in a row on both stacks | Done on 2026-11-11 and 2026-11-18 |
 | Per-attempt judge results | The instrument judges every attempt, so every arm can be scored at its first attempt and the gauge's sensitivity and specificity can be estimated | Done on 2026-11-18 |
 | Exploratory campaign | One run per cell, 20 runs, 10 per arm, in its own results directory. It measures the time per run and looks for a floor or a ceiling. Redesign if `kit-bare` is correct in 9 or more of its 10 runs, or if both arms have zero correct runs at the unfilled-slot level | Done on 2026-11-18. 4 of 10 correct in each arm; the redesign rule did not trigger |
-| Revise the criterion | T11 asked for 20 points with 25 runs per arm, which cannot be detected. The assistant proposed on 2026-11-18 d* = 30 points, a stratified exact test, and 100 or 120 runs. See [`theses.md`](theses.md#t11-was-revised-on-2026-11-18) | Proposed, not confirmed |
-| Confirm | The owner confirms the criteria of T11 to T13 and T22, the plan of 100 runs, and the slot list | To do |
-| Preregister | The tag `prereg/E04` and the harness hash freeze the design | To do |
+| Revise the criterion | T11 asked for 20 points with 25 runs per arm, which cannot be detected. The assistant proposed on 2026-11-18 d* = 30 points, a stratified exact test, and 100 or 120 runs. See [`theses.md`](theses.md#t11-was-revised-on-2026-11-18) | Proposed on 2026-11-18. Confirmed by the owner on 2026-11-21 |
+| Confirm | The owner confirms the criteria of T11 to T13 and T22, the plan of 100 runs, and the slot list | Done on 2026-11-21 |
+| Preregister | The tag `prereg/E04` and the harness hash freeze the design | Done on 2026-11-21: tag `prereg/E04`, harness hash `3b3adef503d66d97` |
 | Confirmatory run | On the local 7B | To do |
 | Report | Published whatever the outcome. The registry and this roadmap are updated | To do |
 
