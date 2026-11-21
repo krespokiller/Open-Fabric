@@ -121,6 +121,18 @@ Columnas de `runs.csv`: `stack`, `arm`, `run` (desde 1), `calls`, `prompt_tokens
 
 `attempts.csv` queda junto a `runs.csv` con una fila por intento de cada run y solo contadores y marcas, nunca el id ni el nombre de un test oculto: `stack`, `arm`, `slot`, `run` (como en `runs.csv`; un brazo de kit es `kit-bare.<ranura>`), `attempt` (desde 1), `built` (`1` si la app construyó y arrancó), `visible_passed` y `visible_total` (checks visibles pasados y corridos en ese intento), `gauge_pass` (`1` si la app construyó y todos los checks visibles pasaron en ese intento), `judge_correct` (`1` si las suites ocultas pasaron completas sobre el estado de ese intento, `0` si no; vacía en resultados anteriores al juicio por intento), `prompt_tokens` y `completion_tokens` (tokens de la llamada de ese intento).
 
+### Controles
+
+Un control responde una pregunta que el método exige antes de cualquier experimento (`docs/method.md`). `controls/unfilled-slots.mjs` es el control "Vacío" de los brazos kit: para cada slot de cada stack instala la referencia, deja ese único slot como su stub sin rellenar (justo el punto de partida de un run kit), arranca la app con la base de datos vacía, reinicia el proveedor de pagos simulado y corre `smoke`, `public`, `hidden` y `hidden2` sobre esa misma instancia. Imprime una fila por stack y slot con los conteos de cada suite, escribe las mismas filas en `<out>/unfilled-slots.csv` y nunca imprime ni escribe el id, el nombre o un valor de un test oculto.
+
+```bash
+node controls/unfilled-slots.mjs --stacks nextjs,django [--slots cart,ledger] [--out results/<carpeta>]
+```
+
+Necesita Docker y tarda entre 15 y 25 minutos con dos stacks y cinco slots. Cómo leer el código de salida: `0` significa que todos los controles construyeron, arrancaron y fallaron al menos un test en cada suite oculta, así que ningún slot sin rellenar es correcto por construcción; `1` significa que un control pasó una suite oculta completa, o no construyó o no arrancó (entonces no dice nada), o los argumentos eran incorrectos, con una línea por problema en stderr; `2` significa un error de entorno (Docker, base de datos). La primera y la última línea de stdout son el hash del experimento antes y después; el script sale con `1` si difieren.
+
+`controls/` queda fuera del hash del experimento a propósito (el hash cubre `task/`, `arms/`, `suites/`, `src/` y `stacks/`), así que se puede añadir o cambiar un control sin cambiar el instrumento. El script solo importa de `src/`; rechaza un `--out` dentro de una carpeta con hash. El control se puede interrumpir y volver a correr con el mismo `--out`; continúa donde se quedó (cada fila se añade al CSV en cuanto se juzga su celda, las celdas terminadas se saltan, y un CSV registrado con otro hash del experimento se rechaza).
+
 ## Reglas para que el resultado sea creíble
 
 1. **Fija el criterio antes de correr y publícalo antes de los números:** usa la regla de decisión de [`docs/method.md`](../docs/method.md) (sección «The decision rule»), con su diferencia mínima que importa preregistrada.
@@ -160,6 +172,7 @@ stacks/<stack>/gold          la implementación de referencia (solo para validat
 stacks/<stack>/stack.json    cómo construir, arrancar y mostrar el proyecto
 suites/                      humo, públicos y ocultos (el juez)
 src/                         el harness; src/psp.mjs es el proveedor de pagos simulado
+controls/                    controles que se corren antes de un experimento; fuera del hash del experimento
 ```
 
 En Docker, cada intento levanta tres contenedores: PostgreSQL, el proveedor de pagos simulado y la app. Al terminar se borran, junto con la imagen de la app.

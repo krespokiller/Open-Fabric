@@ -100,6 +100,18 @@ One row per attempt of every run, next to `runs.csv`. It holds counts and flags 
 | `judge_correct` | `1` when the hidden suites passed in full on that attempt's state, else `0`. Empty for results recorded before the per-attempt judgement |
 | `prompt_tokens`, `completion_tokens` | Tokens of that attempt's model call |
 
+### Controls
+
+A control answers a question the method asks before any experiment runs (`docs/method.md`). `controls/unfilled-slots.mjs` is the control "Empty" of the kit arms: for each slot of each stack it installs the reference, leaves that one slot as its unfilled stub (exactly what a kit run starts from), starts the app on an empty database, resets the payment mock and runs `smoke`, `public`, `hidden` and `hidden2` on that instance. It prints one row per stack and slot with the counts of each suite, writes the same rows to `<out>/unfilled-slots.csv` and never prints or writes a hidden test id, name or value.
+
+```bash
+node controls/unfilled-slots.mjs --stacks nextjs,django [--slots cart,ledger] [--out results/<dir>]
+```
+
+It needs Docker and takes roughly 15 to 25 minutes for two stacks and five slots. Read the exit code: `0` means every control built, started and failed at least one test in each hidden suite, so no unfilled slot is correct by construction; `1` means a control passed a hidden suite in full, or did not build or start (it then says nothing), or the arguments were wrong, with one line per problem on stderr; `2` means an environment error (Docker, database). The first and last lines of stdout are the experiment hash before and after; the script exits `1` if they differ.
+
+`controls/` is outside the experiment hash on purpose (the hash covers `task/`, `arms/`, `suites/`, `src/` and `stacks/`), so a control can be added or changed without changing the instrument. The script only imports from `src/`; it refuses an `--out` folder inside a hashed folder. The control can be interrupted and run again with the same `--out`; it continues where it stopped (each row is appended to the CSV as soon as its cell is judged, finished cells are skipped, and a CSV recorded under another experiment hash is refused).
+
 ## Rules for a credible result
 
 1. Fix the success criterion before running and publish it before the numbers: use the decision rule in [`docs/method.md`](../docs/method.md) (section "The decision rule"), with its smallest difference that matters preregistered.
@@ -139,6 +151,7 @@ stacks/<stack>/gold          the reference implementation (validate-gold and sel
 stacks/<stack>/stack.json    how to build, start and show the project
 suites/                      smoke, public and hidden tests (the judge)
 src/                         the harness; src/psp.mjs is the mock payment provider
+controls/                    controls run before an experiment; outside the experiment hash
 ```
 
 In Docker each attempt starts three containers (PostgreSQL, the mock payment provider and the app) and removes them, including the app image, when it ends. Ctrl+C cleans up open containers and databases before exiting.
