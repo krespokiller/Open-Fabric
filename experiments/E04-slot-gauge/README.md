@@ -205,7 +205,32 @@ Not run yet.
 
 ## 5. Deviations from the preregistration
 
-None so far.
+One, on the day the campaign started. Nothing was analysed before it was written.
+
+### The campaign stopped after 8 runs (2026-11-21)
+
+**What happened.** The campaign started at 16:10 UTC. At 16:28 the memory guard of the session that launched it killed the launcher, because the machine had less than 1 GB of free memory. The memory watchdog of section 2 died with the launcher. The campaign process survived, and the assistant stopped it at 16:30. Eight runs had finished and a ninth had just started.
+
+**Cause.** The model server holds about 6 GB of memory on this machine; the assistant had estimated 4.5 GB. A Next.js build inside Docker needs 1 to 1.5 GB more. Dropping the Docker file cache, the measure written in section 2, was not enough.
+
+**One run was damaged.** The run of `kit-tests`, `signature`, Next.js, run 1, finished at 16:29:48, during the shortage. Its attempts 1 to 5 built and failed 2 of the 12 visible checks. Its attempt 6 reported "docker compose up failed". The harness aborts on the machine failures it recognises, and it did not recognise this one.
+
+**How the damage was told from a model error.** After freeing memory, the assistant rebuilt the final workspace of each of the three runs that ended without a build (`docker build` on the workspace of the run).
+
+| Run (Next.js, run 1) | Recorded | Rebuild | Reading |
+| --- | --- | --- | --- |
+| `kit-tests`, `signature` | Attempt 6 did not build | Builds without error | Machine failure |
+| `kit-bare`, `webhook` | No attempt built | Fails: the model's file does not export the function the installed code imports | Model error |
+| `kit-tests`, `cart` | No attempt built | Fails for the same kind of reason | Model error |
+
+In the damaged run, the correct-or-wrong result (wrong) and the gauge result (not passed) come from attempts 1 to 5 and do not depend on attempt 6. Its `built_final` and its hidden pass counts do.
+
+**Changes for the rest of the campaign, proposed by the assistant on 2026-11-21.**
+
+1. **Memory.** When free memory falls under 3 GB, a watchdog asks Windows to release the idle pages of the model server (`EmptyWorkingSet`), and drops the Docker file cache if that is not enough. The weights of the model are in video memory, so those pages are idle. No setting of the model server or of the harness changes. Measured on 2026-11-21: free memory went from 3.2 GB to 7.5 GB, and the model generated 50 tokens per second before and 49 after.
+2. **Audit rule, for all 100 runs.** Every run that ends without a build has its final workspace rebuilt after the campaign. If it builds, the failure was the machine's: the run is set aside, kept, and run again. The rule looks only at whether the final workspace builds, never at the result of the run. The damaged run above is its first case. The harness seeds every call from the run number and the attempt number, so the repeated run uses the same seeds.
+
+The seven other finished runs are kept as they are.
 
 ## 6. Limits
 
