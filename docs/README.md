@@ -51,6 +51,8 @@ Start with [`vision.md`](vision.md) for the idea and [`method.md`](method.md) fo
 | [E06 piece questions](../experiments/E06-piece-questions/README.md) | Not run | T17 | Proposed |
 | [E07 independent gauge](../experiments/E07-independent-gauge/README.md) | Not run | T18 | Proposed |
 | [E08 composition](../experiments/E08-composition/README.md) | Not run | T19 | Proposed |
+| [E09 finding the piece](../experiments/E09-finding-the-piece/README.md) | Not run | T23 | Proposed |
+| [E10 lessons from the gauge](../experiments/E10-lessons-from-the-gauge/README.md) | Not run | T24 | Proposed |
 
 ## History
 

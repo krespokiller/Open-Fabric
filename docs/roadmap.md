@@ -103,6 +103,13 @@ Other changes of 2026-11-18, none of them a problem found by an experiment:
 | 3 | [E06](../experiments/E06-piece-questions/README.md) | T17 | Do the piece's questions recover the rules the client did not say? | It tests promise 2 with a simulated client |
 | 4 | [E08](../experiments/E08-composition/README.md) | T19 | Do pieces that pass separately pass together? | It is the first experiment beyond the checkout task: a live-sales mix |
 
+### E09 and E10, proposed on 2026-11-21
+
+Both were proposed by the assistant on 2026-11-21, after the owner's request of that day. Neither is designed or confirmed, and neither needs a paid model. See [`product.md`](product.md#deterministic-first).
+
+- [E09](../experiments/E09-finding-the-piece/README.md) (T23) comes first: it needs no verdict, no Docker and no paid model.
+- [E10](../experiments/E10-lessons-from-the-gauge/README.md) (T24) comes after the E04 analysis, because its lessons come from the attempts of E04.
+
 ## Later
 
 | Item | Thesis | Condition | What it involves |
@@ -140,6 +147,8 @@ The approaches behind these gates, and the rungs each one climbs, are in [`produ
 | G5 | E06 (T17) | Pieces that carry business questions |
 | G6 | E08 (T19) | Blueprints composed from the catalog |
 | G7 | E05 (T14 refuted) | Stop the assembly line, publish the benchmark and the negative result, keep only what RQ1 supports |
+| G8 | E09 (T23) | The catalog index and its query interface, or else pieces taken from an approved manifest |
+| G9 | E10 (T24) | The lesson store of the line |
 
 ### Decisions that only the owner can make
 

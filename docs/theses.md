@@ -1,6 +1,6 @@
 # Thesis registry
 
-No thesis has been supported or refuted yet. Of 22 theses, 3 ended undecidable, 2 were superseded, 3 were discarded before running, 4 are preregistered and 10 are proposed.
+No thesis has been supported or refuted yet. Of 24 theses, 3 ended undecidable, 2 were superseded, 3 were discarded before running, 4 are preregistered and 12 are proposed.
 
 | Status | Theses |
 | --- | --- |
@@ -8,7 +8,7 @@ No thesis has been supported or refuted yet. Of 22 theses, 3 ended undecidable, 
 | `superseded` | T4 (by T20), T5 (by T17) |
 | `discarded` | T8, T9, T10 |
 | `preregistered` | T11, T12, T13, T22 |
-| `proposed` | T6, T7, T14, T15, T16, T17, T18, T19, T20, T21 |
+| `proposed` | T6, T7, T14, T15, T16, T17, T18, T19, T20, T21, T23, T24 |
 
 ## How to read this registry
 
@@ -29,6 +29,7 @@ Terms used in the criteria:
 | `of-kit` | Arm proposed for Round 2 and never built: the tool installs the whole piece with its adapter for the stack, and the model gets the contract of the gaps and the public tests. Planned first for Next.js and Django |
 | `kit-bare`, `kit-tests` | Arms of E04: the tool installs the service and the model fills one slot |
 | `workshop`, `workshop-gauge`, `line` | Arms of E05, all inside the same stack: from scratch, from scratch with the visible gauge, and pieces installed deterministically with the model filling the gaps |
+| `full`, `index`, `similarity` | Arms of E09: every piece card in the prompt, one line per piece followed by a fetch of the full card, and the top cards by embedding similarity |
 | Slot | A gap as the bench cuts it: one pure function with one business rule |
 
 ## RQ1 Gauge
@@ -102,6 +103,15 @@ Does the gauge work outside the backend?
 | --- | --- | --- | --- | --- | --- |
 | T7 | The gauge works in the frontend | A UI piece with end-to-end tests | To be fixed before writing the piece. **Not set** | `proposed` | Not assigned |
 
+## RQ8 Reach
+
+How should the pieces and what the line has learned reach the agent?
+
+| # | Thesis | Primary comparison | Criterion | Status | Experiment |
+| --- | --- | --- | --- | --- | --- |
+| T23 | The agent picks the right pieces from an index it can query, as often as from the whole catalog, with fewer tokens | `index` against `full`, with `similarity` as a third arm, at 10, 50 and 200 cards | **Not set.** Proposed by the assistant on 2026-11-21, after the owner's request of that day | `proposed` | [E09](../experiments/E09-finding-the-piece/README.md) |
+| T24 | Lessons kept from earlier visible check failures raise correctness at the first attempt | `kit-tests` with the lessons of the slot against `kit-tests` | **Not set.** Proposed by the assistant on 2026-11-21, after the owner's request of that day | `proposed` | [E10](../experiments/E10-lessons-from-the-gauge/README.md) |
+
 ## Who set each criterion
 
 A criterion that the owner has not confirmed stays `proposed` and cannot be preregistered.
@@ -115,6 +125,7 @@ A criterion that the owner has not confirmed stays `proposed` and cannot be prer
 | T14, T16, T17, T18, T19 | Proposed with the single-stack pivot. No owner confirmation is recorded | The record does not name the author | 2026-11-16 |
 | T15 (revised), T20, T21 | Proposed. The owner has not confirmed them | The assistant | 2026-11-17 |
 | T22 | Proposed after the E04 exploratory campaign. Confirmed by the owner on 2026-11-21 and preregistered with the tag `prereg/E04` on 2026-11-21 | The assistant | 2026-11-18 |
+| T23, T24 | Never set. The theses were proposed by the assistant after the owner's request of the same day. The owner has not confirmed them | The assistant | 2026-11-21 |
 
 ## Notes
 

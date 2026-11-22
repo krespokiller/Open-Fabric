@@ -20,6 +20,7 @@ Newest first.
 
 | Date | Decision | Who | Why |
 | --- | --- | --- | --- |
+| 2026-11-21 | Add a second approach around the retrieval of components or agent memory, and leave the choice of design to the assistant. The result must come from mathematics and engineering, in a deterministic way | Owner | Statement of direction, in the owner's words: "something like make a rag of components or use engram" and "this works if maths and engeneering throws a good result. you know? like deterministic". The design that follows (P6 and P7, the rule "Deterministic first") is a proposal of the assistant. See [`product.md`](product.md#deterministic-first) |
 | 2026-11-17 | Research comes first. Order the thinking with the scientific method and explore several theses on several stacks | Owner | The current goal is evidence from a real benchmark. The research is the means to a real product |
 | 2026-11-17 | With those results, decide what can be done. Then test another thesis, or improve along some path and some stack | Owner | Same |
 | 2026-11-17 | The purpose and the three promises stand | Owner | They stay as theses under test |
@@ -145,6 +146,8 @@ The map says which verdicts justify building which thing. No product code is wri
 | G5 | T17 `supported` | Pieces that carry business questions |
 | G6 | T19 `supported` | Blueprints composed from the catalog |
 | G7 | T14 `refuted` | Stop the assembly line. Publish the benchmark and the negative result. Keep only what RQ1 supports |
+| G8 (proposed by the assistant on 2026-11-21) | T23 `supported` | The catalog index and its query interface for the agent. Otherwise the assembler takes pieces from an approved manifest |
+| G9 (proposed by the assistant on 2026-11-21) | T24 `supported` | The lesson store of the line |
 
 **Amendment to G1, proposed by the assistant on 2026-11-21. Not confirmed by the owner.** G1 was written before T22 existed. The proposal is that G1 reads "T11, T22 or T18 `supported`". The three verdicts justify different promises: T11 says the gauge makes the model write correct code more often, T22 says the gauge tells a correct result from a wrong one more often, and T18 says an independent gauge detects more. The amendment was written before the confirmatory data of E04 was analysed. When writing it the assistant knew the exploratory runs of E04, which favour T22 over T11 and are not evidence, and had read the log lines of the first 8 confirmatory runs while repairing the campaign (see [E04](../experiments/E04-slot-gauge/README.md#5-deviations-from-the-preregistration)).
 
