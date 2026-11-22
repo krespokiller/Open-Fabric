@@ -205,7 +205,7 @@ Not run yet.
 
 ## 5. Deviations from the preregistration
 
-One, on the day the campaign started. Nothing was analysed before it was written.
+Two stops of the campaign, both by the memory guard of the session that launched it, and five runs set aside and run again because of them. Nothing was analysed before this was written.
 
 ### The campaign stopped after 8 runs (2026-11-21)
 
@@ -232,7 +232,24 @@ In the damaged run, the correct-or-wrong result (wrong) and the gauge result (no
 
 The seven other finished runs are kept as they are.
 
-**What the assistant saw.** To diagnose the stop, the assistant read the campaign log and the `metrics.json` of the three runs that ended without a build. The log shows, for each of the first 8 runs, its hidden pass count, calls and tokens. Nothing was counted across runs, no analysis command was run on the confirmatory data, and neither the criteria nor the design changed. The plan stays one look, after the 100 runs.
+### The campaign stopped a second time, with 64 valid runs (2026-11-22)
+
+**What happened.** The campaign resumed at 04:06 UTC on 2026-11-22. At about 06:05 UTC the memory guard killed the launcher again. By the launcher's own log, memory was not short this time: free memory stayed between 3.9 and 4.6 GB during the last hour, and committed memory was at 72% of its limit two minutes after the kill. The guard does not publish its threshold; it acted with about a quarter of the memory free.
+
+**What the kill does to the campaign process.** The campaign process survived again. From that moment it could not start Docker: each `docker compose up` returned at once, with an error and no output, and the harness recorded each one as an attempt that did not build. Four runs were recorded this way between 06:05:10 and 06:06:57 UTC, each with 6 calls, no build, and about 0.1 s of build time for the six calls together. A real build takes 10 s or more. The assistant stopped the process at 06:07 UTC.
+
+**Correction to the reading of the first stop.** The damaged run of 2026-11-21 fits the same pattern: its failed attempt came right after the guard's kill. The kill is the likely cause there too, more than the memory shortage by itself. The table above stands: that failure was the machine's.
+
+**Rule for runs recorded by an orphaned process.** A run is set aside and run again when it was in progress at the guard's kill, or started after it and before the process was stopped. These runs are recognised without looking at their result: their build time is under 2 s per call, which means Docker never ran. Set aside under this rule, all on Next.js: `kit-bare` `ledger` run 4, and `kit-tests` `discount`, `cart` and `signature` run 4. The run in progress when the assistant stopped the process (`kit-tests` `webhook` run 4) had no result file, and the harness repeats it by itself. 64 finished runs remain. The audit of runs that end without a build still applies to all 100 at the end.
+
+**Changes for the rest of the campaign.**
+
+1. The watchdog releases the idle memory of the model server when free memory falls under 5.5 GB, not 3 GB, to stay away from the level at which the guard acted.
+2. The launcher stops the campaign process if the launcher loses its own parent process, so an orphaned process cannot record runs.
+
+**Who decided to resume.** The owner was away. After the first stop the assistant had told the owner that it could not restart the campaign by itself after a memory stop. The owner answered on 2026-11-21 "puedes continuar? te doy libertad 100%" (can you continue? I give you 100% freedom) and later "just continue and do your thing". The assistant resumed on 2026-11-22 under that instruction, after checking that 7.0 GB of memory were available.
+
+**What the assistant saw.** To diagnose the stops, the assistant read the campaign log and the `metrics.json` of the three runs that ended without a build. The log shows, for each run, its hidden pass count, calls and tokens; the assistant read those lines for the first 8 runs and for the runs around the second stop, and the build flags and times of the result files of all finished runs. Nothing was counted across runs, no analysis command was run on the confirmatory data, and neither the criteria nor the design changed. The plan stays one look, after the 100 runs.
 
 ## 6. Limits
 
