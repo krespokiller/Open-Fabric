@@ -26,11 +26,11 @@ Esta apuesta es OpenFabric: que la IA trabaje como una fábrica. Que arme con pi
 
 Pues no me la creí :v
 
-A la IA con la que trabajo le puse una regla: no quiero que me des la razón, quiero números. Y antes de medir nada dejamos publicado qué resultado me daría la razón y cuál me la quitaría. Así no hay cómo acomodar la historia después.
+A la IA con la que trabajo le puse una regla: no quiero que me des la razón, quiero números. Y antes de medir nada dejamos publicado qué resultado me daría la razón y cuál me la quitaría.
 
-## Lo que hicimos en dos semanas
+Así no hay cómo acomodar la historia después.
 
-Un banco de pruebas: un servicio de pagos, un juez oculto de 47 pruebas que la IA nunca ve, y una IA pequeña corriendo en mi computador de casa. Costo en servicios de IA: cero.
+Las pruebas que definí eran sencillas, un servicio de pagos, un juez oculto de 47 pruebas que la IA nunca ve, y una IA pequeña corriendo en mi computador de casa. Costo IA cero, solo lo que vale la luz de la casa.
 
 Con eso medimos dos caminos.
 
@@ -85,7 +85,7 @@ Voy a contar cada experimento aquí, salga bien o salga mal.
 
 ## Ficha técnica
 
-Para quien quiera revisar todo.
+A quien le interese
 
 **Modelo**
 
