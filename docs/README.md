@@ -11,8 +11,9 @@ Start with [`vision.md`](vision.md) for the idea and [`method.md`](method.md) fo
 | 3 | [`theses.md`](theses.md) | The registry: every thesis, its criterion, its status and its experiment |
 | 4 | [`roadmap.md`](roadmap.md) | What runs now, next and later, and the gates between them |
 | 5 | [`decisions.md`](decisions.md) | What the owner decided, what is only recommended, what is open, and which verdicts justify building what |
-| 6 | [`architecture.md`](architecture.md) | How the instrument is built and how a stack enters it |
-| 7 | [`model.md`](model.md) | The mathematical model of the claim |
+| 6 | [`product.md`](product.md) | The product approaches, written so each can be tested and stopped, the rungs they climb and the order |
+| 7 | [`architecture.md`](architecture.md) | How the instrument is built and how a stack enters it |
+| 8 | [`model.md`](model.md) | The mathematical model of the claim |
 
 ## Find something fast
 
@@ -23,6 +24,7 @@ Start with [`vision.md`](vision.md) for the idea and [`method.md`](method.md) fo
 | What do we do next? | [`roadmap.md`](roadmap.md#now) |
 | Was this decided, or only recommended? | [`decisions.md`](decisions.md) |
 | What would make us build something? | [`decisions.md`](decisions.md#decision-map) |
+| Which product approach are we testing, and what comes next? | [`product.md`](product.md) |
 | What does the market look like? | [`../research/README.md`](../research/README.md) |
 | How do I run the bench? | [`../bench/README.md`](../bench/README.md) |
 | What does a word mean? | [`method.md`](method.md#vocabulary) |

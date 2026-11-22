@@ -129,6 +129,8 @@ Every experiment passes these, in this order. They come from [`method.md`](metho
 
 Each gate is a row of the [decision map](decisions.md#decision-map). The map is a proposal that the owner has not confirmed.
 
+The approaches behind these gates, and the rungs each one climbs, are in [`product.md`](product.md).
+
 | Gate | Fed by | Opens |
 | --- | --- | --- |
 | G1 | E04 (T11) or E07 (T18) | Gauge tooling for existing stacks |

@@ -146,6 +146,8 @@ The map says which verdicts justify building which thing. No product code is wri
 | G6 | T19 `supported` | Blueprints composed from the catalog |
 | G7 | T14 `refuted` | Stop the assembly line. Publish the benchmark and the negative result. Keep only what RQ1 supports |
 
+**Amendment to G1, proposed by the assistant on 2026-11-21. Not confirmed by the owner.** G1 was written before T22 existed. The proposal is that G1 reads "T11, T22 or T18 `supported`". The three verdicts justify different promises: T11 says the gauge makes the model write correct code more often, T22 says the gauge tells a correct result from a wrong one more often, and T18 says an independent gauge detects more. The amendment was written before the confirmatory data of E04 was analysed. When writing it the assistant knew the exploratory runs of E04, which favour T22 over T11 and are not evidence, and had read the log lines of the first 8 confirmatory runs while repairing the campaign (see [E04](../experiments/E04-slot-gauge/README.md#5-deviations-from-the-preregistration)).
+
 The map replaces the build rule proposed on 2026-11-16:
 
 | Rule of 2026-11-16 | Where it is now |
@@ -154,3 +156,5 @@ The map replaces the build rule proposed on 2026-11-16:
 | If T15 is not met, build the verification layer on top of existing frameworks | G1 without G2 |
 
 A verdict has a scope: the stacks, models and tasks it was tested on. A gate met with a 7B model in two stacks is met for that scope only. The method tests a thesis that matters for the product again when a stronger model is available.
+
+The approaches behind each gate and the rungs they climb are in [`product.md`](product.md).

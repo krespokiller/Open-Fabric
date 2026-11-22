@@ -232,6 +232,8 @@ In the damaged run, the correct-or-wrong result (wrong) and the gauge result (no
 
 The seven other finished runs are kept as they are.
 
+**What the assistant saw.** To diagnose the stop, the assistant read the campaign log and the `metrics.json` of the three runs that ended without a build. The log shows, for each of the first 8 runs, its hidden pass count, calls and tokens. Nothing was counted across runs, no analysis command was run on the confirmatory data, and neither the criteria nor the design changed. The plan stays one look, after the 100 runs.
+
 ## 6. Limits
 
 These are the limits written with the design in `docs/context.md`.
