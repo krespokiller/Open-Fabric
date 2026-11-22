@@ -225,7 +225,7 @@ One, on the day the campaign started. Nothing was analysed before it was written
 
 In the damaged run, the correct-or-wrong result (wrong) and the gauge result (not passed) come from attempts 1 to 5 and do not depend on attempt 6. Its `built_final` and its hidden pass counts do.
 
-**Changes for the rest of the campaign, proposed by the assistant on 2026-11-21.**
+**Changes for the rest of the campaign.** The assistant proposed them on 2026-11-21 and the owner answered the same day with the instruction to resume. The damaged run was moved to `bench/results/E04-slot-gauge-confirmatory-set-aside/` before the campaign resumed, so the harness runs it again.
 
 1. **Memory.** When free memory falls under 3 GB, a watchdog asks Windows to release the idle pages of the model server (`EmptyWorkingSet`), and drops the Docker file cache if that is not enough. The weights of the model are in video memory, so those pages are idle. No setting of the model server or of the harness changes. Measured on 2026-11-21: free memory went from 3.2 GB to 7.5 GB, and the model generated 50 tokens per second before and 49 after.
 2. **Audit rule, for all 100 runs.** Every run that ends without a build has its final workspace rebuilt after the campaign. If it builds, the failure was the machine's: the run is set aside, kept, and run again. The rule looks only at whether the final workspace builds, never at the result of the run. The damaged run above is its first case. The harness seeds every call from the run number and the attempt number, so the repeated run uses the same seeds.
