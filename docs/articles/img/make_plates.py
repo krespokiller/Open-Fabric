@@ -61,6 +61,8 @@ def build_html(svg_text, name, w_px, h_px, t):
     x0, y0, x1, y1 = box(name)
     # Drop the full-page background rect (body supplies the colour instead).
     svg = re.sub(r'<rect width="100%" height="100%" fill="#12171d"/>', "", svg_text, count=1)
+    # Drop the plate number label ("LÁMINA I"): it reads oddly outside the three-plate drawing.
+    svg = re.sub(r'<text x="12" y="18" class="head-b">[^<]*</text>', "", svg)
     # Rewrite the root element: viewBox of the plate, size equal to the window.
     svg = re.sub(
         r'<svg\b[^>]*?>',

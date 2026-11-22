@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-label="Cover: a kitten with a robotic arm holds a blue piece. OpenFabric. De los errores se aprende, del éxito muy poco.">
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-label="Cover: a kitten with a robotic arm holds a blue piece. OpenFabric. Del fracaso se aprende, del éxito no mucho.">
   <style>
     text{font-family:"IBM Plex Mono",Consolas,monospace;fill:#9aa5b1}
     .ln{stroke:#e4e7ea;stroke-width:13;fill:none;stroke-linecap:round;stroke-linejoin:round}
@@ -8,12 +8,11 @@
   </style>
   <!-- background -->
   <rect width="1920" height="1080" fill="#12171d"/>
-  <!-- plate IV: yellow offset block, plate, header -->
+  <!-- yellow offset block and plate -->
   <rect x="94" y="94" width="1760" height="940" fill="#f0b72a"/>
   <rect x="80" y="80" width="1760" height="940" fill="#19212a" stroke="#f0b72a" stroke-width="3"/>
-  <text x="120" y="134" style="font-size:30px;letter-spacing:3px;fill:#e4e7ea">LÁMINA IV</text>
-  <text x="1800" y="134" text-anchor="end" style="font-size:30px;letter-spacing:3px">EL ENSAMBLADOR</text>
-  <line x1="80" y1="160" x2="1840" y2="160" stroke="#34404c" stroke-width="3"/>
+  <!-- everything inside the plate, moved up to fill the space of the removed header -->
+  <g transform="translate(0,-40)">
   <!-- cat with robotic arm (same drawing as logo.svg, scaled) -->
   <g transform="translate(6,46) scale(2)"><g transform="translate(6,-20)">
     <!-- floor -->
@@ -47,11 +46,12 @@
   <rect x="1004" y="352" width="200" height="8" fill="#f0b72a"/>
   <!-- headline -->
   <text style="font-size:84px;font-weight:700;fill:#e4e7ea">
-    <tspan x="1000" y="505">De los errores</tspan>
+    <tspan x="1000" y="505">Del fracaso</tspan>
     <tspan x="1000" y="601">se aprende,</tspan>
     <tspan x="1000" y="697" style="fill:#f0b72a">del éxito</tspan>
-    <tspan x="1000" y="793" style="fill:#f0b72a">muy poco.</tspan>
+    <tspan x="1000" y="793" style="fill:#f0b72a">no mucho.</tspan>
   </text>
   <!-- subline -->
   <text x="1000" y="945" style="font-size:38px">primer experimento · 100 repeticiones</text>
+  </g>
 </svg>
