@@ -1,30 +1,32 @@
 # E04: Gauge at slot level
 
-**Preregistered on 2026-11-21 with the tag `prereg/E04`. The confirmatory campaign of 100 runs starts after the tag and has no result yet.** The tool installs the whole reference service and leaves one slot: a pure function with one business rule. The model writes only that function, with or without the gauge in view. The exploratory campaign of 20 runs gave both arms the same 4 of 10 correct runs; with the gauge in view the model's wrong code was detected far more often and never repaired (section 3). Those runs carry no verdict. On 2026-11-18 the assistant revised the criteria of T11, T12 and T13 and, after the exploratory campaign, proposed T22 (section 1). The instrument problems listed before are closed (section 7). The owner confirmed the criteria, the plan and the slot list on 2026-11-21 (section 7). The unfilled-slot control was repeated on the frozen instrument the same day and gave the table of 2026-11-11 again (section 3).
+**Reported. The confirmatory campaign of 100 runs finished on 2026-11-22: T11 is refuted and T22 is supported, for one 7B model, two stacks and five slots. T12 and T13 are undecidable.** Seeing the public tests did not make the model write a correct function more often (19 of 50 runs against 21 of 50). It made the pass or no-pass decision at the end of a run agree with the judge more often (37 of 50 against 27 of 50), and that whole difference comes from one slot, `signature` (section 4). No run became correct after its first attempt. The tool installs the whole reference service and leaves one slot: a pure function with one business rule. The model writes only that function, with or without the gauge in view. The exploratory campaign of 20 runs gave both arms the same 4 of 10 correct runs; with the gauge in view the model's wrong code was detected far more often and never repaired (section 3). Those runs carry no verdict. On 2026-11-18 the assistant revised the criteria of T11, T12 and T13 and, after the exploratory campaign, proposed T22 (section 1). The instrument problems listed before are closed (section 7). The owner confirmed the criteria, the plan and the slot list on 2026-11-21 (section 7). The unfilled-slot control was repeated on the frozen instrument the same day and gave the table of 2026-11-11 again (section 3).
 
 | Field | Value |
 | --- | --- |
-| Status | `preregistered` |
+| Status | `reported` |
 | Kind | confirmatory |
-| Dates | Designed on 2026-11-11. Preregistered on 2026-11-21. The confirmatory campaign starts after the tag |
+| Dates | Designed on 2026-11-11. Preregistered on 2026-11-21. The confirmatory campaign ran on 2026-11-21 and 2026-11-22 |
 | Theses | T11, T12, T13 and T22, defined in [`docs/theses.md`](../../docs/theses.md) |
 | Research questions | RQ1 Gauge |
-| Scope | Planned: Next.js and Django; Qwen2.5-Coder 7B (Q4_K_M) on a local GPU; five slots of the checkout task |
+| Scope | Next.js and Django; Qwen2.5-Coder 7B (Q4_K_M) on a local GPU; five slots of the checkout task. Every verdict holds for this scope only |
 | Tag and hash | Tag `prereg/E04`. Harness hash `3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60` |
-| Data | Exploratory campaign: [`data/exploratory/`](data/exploratory/). Unfilled-slot control of 2026-11-21: [`data/control-unfilled/`](data/control-unfilled/). No confirmatory data yet. The control results of 2026-11-11 are kept outside the repository and carried here from [`docs/context.md`](../../docs/context.md) |
+| Data | Exploratory campaign: [`data/exploratory/`](data/exploratory/). Unfilled-slot control of 2026-11-21: [`data/control-unfilled/`](data/control-unfilled/). Confirmatory campaign: [`data/confirmatory/`](data/confirmatory/), with `runs.csv`, `attempts.csv`, the output of the two frozen analysis commands, the descriptive tables, the rebuild audit, the list of runs set aside and a copy of the harness report. The control results of 2026-11-11 are kept outside the repository and carried here from [`docs/context.md`](../../docs/context.md) |
 
 This experiment is called "Ronda 3" in `docs/context.md`. The task notes behind it are working notes kept outside the repository.
 
 ## 1. Verdict per thesis
 
-None yet. The criteria below were proposed by the assistant on 2026-11-18, replacing the ones proposed on 2026-11-11. The owner confirmed them on 2026-11-21 (section 7) and the tag `prereg/E04` fixes them. The decision rule is the one in [`docs/method.md`](../../docs/method.md#the-decision-rule), implemented in [`analysis/`](../../analysis/README.md).
+Verdicts of 2026-11-22, from one look at 100 runs. They hold for one model (Qwen2.5-Coder 7B), two stacks and five slots. The numbers are in section 4.
+
+The criteria below were proposed by the assistant on 2026-11-18, replacing the ones proposed on 2026-11-11. The owner confirmed them on 2026-11-21 (section 7) and the tag `prereg/E04` fixes them. The decision rule is the one in [`docs/method.md`](../../docs/method.md#the-decision-rule), implemented in [`analysis/`](../../analysis/README.md).
 
 | Thesis | Claim | Primary comparison and proposed criterion | Verdict |
 | --- | --- | --- | --- |
-| T11 | A gauge in view improves correctness when filling a slot. **Primary** | `kit-tests` (treatment) against `kit-bare` (control). Exact conditional Cochran-Mantel-Haenszel test stratified by stack and slot, one-sided alpha 0.025. `supported` needs the test to pass and a positive observed difference in every stack. `refuted` when the Newcombe upper limit of the difference is below d*. d* = 30 percentage points. Runs per cell are fixed at preregistration (see section 2) | None yet |
-| T12 | A gauge that does not cover the subtle rule gives false confidence. Secondary | Discount slot, `kit-tests` only. False confidence = runs where the gauge passes and the judge fails, divided by runs where the gauge passes. `supported` when the Clopper-Pearson lower limit (95%) is above 0.5, `refuted` when the upper limit is below 0.5, otherwise `undecidable`. "Not estimable" when no run passes the gauge. Public test P1 does not exercise half-to-even rounding | None yet |
-| T13 | The gauge does not make the result more expensive. Secondary | Ratio of tokens per correct run, `kit-tests` over `kit-bare`, with the interval of the statistics tool. `supported` when the upper limit is below 1, `refuted` when the lower limit is above 1, otherwise `undecidable`. If either arm has no correct run, only a one-sided statement is made and the verdict is `undecidable` | None yet |
-| T22 | With the gauge in view, the pass or no-pass decision at the end of a run agrees with the judge more often. **Primary**, proposed on 2026-11-18 after the exploratory campaign | Outcome per run: the decision is right when `gauge_pass` equals `correct` (a correct run that passed its visible checks, or a wrong run that did not). `kit-tests` against `kit-bare`, same test, strata, alpha and d* = 30 points as T11 (`--outcome decision-right` in the statistics tool). The four classes of runs are reported per arm: delivered correct, known failure, silent defect, false rejection | None yet |
+| T11 | A gauge in view improves correctness when filling a slot. **Primary** | `kit-tests` (treatment) against `kit-bare` (control). Exact conditional Cochran-Mantel-Haenszel test stratified by stack and slot, one-sided alpha 0.025. `supported` needs the test to pass and a positive observed difference in every stack. `refuted` when the Newcombe upper limit of the difference is below d*. d* = 30 percentage points. Runs per cell are fixed at preregistration (see section 2) | **`refuted`.** 19 of 50 against 21 of 50. Difference -4.0 points, upper limit +15.5, below d* |
+| T12 | A gauge that does not cover the subtle rule gives false confidence. Secondary | Discount slot, `kit-tests` only. False confidence = runs where the gauge passes and the judge fails, divided by runs where the gauge passes. `supported` when the Clopper-Pearson lower limit (95%) is above 0.5, `refuted` when the upper limit is below 0.5, otherwise `undecidable`. "Not estimable" when no run passes the gauge. Public test P1 does not exercise half-to-even rounding | **`undecidable`.** 5 of 10 gauge passes fail the judge. Interval 18.7% to 81.3%, which contains 0.5 |
+| T13 | The gauge does not make the result more expensive. Secondary | Ratio of tokens per correct run, `kit-tests` over `kit-bare`, with the interval of the statistics tool. `supported` when the upper limit is below 1, `refuted` when the lower limit is above 1, otherwise `undecidable`. If either arm has no correct run, only a one-sided statement is made and the verdict is `undecidable` | **`undecidable`.** Ratio 2.06, limits 0.43 to 9.63, which contain 1 |
+| T22 | With the gauge in view, the pass or no-pass decision at the end of a run agrees with the judge more often. **Primary**, proposed on 2026-11-18 after the exploratory campaign | Outcome per run: the decision is right when `gauge_pass` equals `correct` (a correct run that passed its visible checks, or a wrong run that did not). `kit-tests` against `kit-bare`, same test, strata, alpha and d* = 30 points as T11 (`--outcome decision-right` in the statistics tool). The four classes of runs are reported per arm: delivered correct, known failure, silent defect, false rejection | **`supported`.** 37 of 50 against 27 of 50. Difference +20.0 points, exact one-sided p = 0.0018, positive in both stacks. The estimate is below d*, and all of it comes from `signature` |
 
 **Why T22, and why it is not met by construction.** The exploratory campaign suggested it: the decision agreed with the judge in 8 of 10 runs with the gauge in view and in 5 of 10 without. Those runs are not counted; the claim is tested on new runs. A gauge that always fails would also "decide right" on every wrong run, so its rate would be one minus the correct rate: about 60% at the exploratory correct rate of 40%, which is 10 points above `kit-bare` and below the 30 points asked. T22 is therefore read next to the correct rate and the count of false rejections, and both are reported.
 
@@ -201,7 +203,97 @@ What this changes in the design (proposed by the assistant on 2026-11-18, not co
 
 ## 4. Results per stack, then pooled
 
-Not run yet.
+**In short:** with the public tests in view the model did not write correct code more often, it never repaired a wrong answer, and its failures became visible in one slot of five.
+
+| Item | Value |
+| --- | --- |
+| Runs | 100, 5 per cell, finished on 2026-11-22 at 07:33 UTC. Mean wall time 2.2 minutes per run |
+| Instrument | Harness hash `3b3adef503d66d97`, the same before and after |
+| Look | One, after the 100 runs and after the audit of section 5 |
+| Commands | The two frozen commands of section 2, run once. Their full output is in [`data/confirmatory/analysis-T11.md`](data/confirmatory/analysis-T11.md) and [`analysis-T22.md`](data/confirmatory/analysis-T22.md). The descriptive tables are in [`describe.md`](data/confirmatory/describe.md) |
+| Verdict code | The one at the tag: `git diff prereg/E04 -- analysis/cli.mjs analysis/stats.mjs` prints nothing |
+
+### T11, correct runs: refuted
+
+| Stratum | `kit-tests` | `kit-bare` | Difference (points) | Interval (points) |
+| --- | --- | --- | --- | --- |
+| Django | 14 of 25 | 14 of 25 | 0.0 | -25.7 to +25.7 |
+| Next.js | 5 of 25 | 7 of 25 | -8.0 | -30.5 to +15.5 |
+| **Pooled** | **19 of 50** | **21 of 50** | **-4.0** | **-23.1 to +15.5** (z_R = 2.05) |
+
+- The upper limit of the difference, +15.5 points, is below d* = 30 points. That is the rule for `refuted`.
+- Exact stratified test: one-sided p = 0.88, with 4 informative strata of 10.
+- By slot, `kit-tests` against `kit-bare`: `cart` 5 of 10 against 8 of 10, `discount` 5 against 4, `ledger` 9 against 9, `signature` 0 against 0, `webhook` 0 against 0.
+- At the first attempt the counts are the same 19 and 21. No run became correct after its first attempt.
+
+### T22, the decision is right: supported
+
+| Arm | Delivered correct | Known failure | Silent defect | False rejection | Right decisions |
+| --- | --- | --- | --- | --- | --- |
+| `kit-bare` | 21 | 6 | 23 | 0 | 27 of 50 (54.0%) |
+| `kit-tests` | 19 | 18 | 13 | 0 | 37 of 50 (74.0%) |
+
+| Stratum | `kit-tests` | `kit-bare` | Difference (points) | Interval (points) |
+| --- | --- | --- | --- | --- |
+| Django | 19 of 25 | 14 of 25 | +20.0 | -6.0 to +42.7 |
+| Next.js | 18 of 25 | 13 of 25 | +20.0 | -6.6 to +43.0 |
+| **Pooled** | **37 of 50** | **27 of 50** | **+20.0** | **+0.3 to +37.6** (z_R = 2.05) |
+
+- Exact stratified test: one-sided p = 0.0018, with 5 informative strata of 10. The difference is positive in both stacks. That is the rule for `supported`.
+- `supported` means the difference is above zero and d* is not excluded. It does not mean the difference reaches d*: the estimate is 20 points and d* is 30.
+
+**The whole difference comes from one slot.**
+
+| Slot | `kit-tests` | `kit-bare` | Difference (points) |
+| --- | --- | --- | --- |
+| `signature` | 10 of 10 | 0 of 10 | +100 |
+| `discount` | 5 of 10 | 4 of 10 | +10 |
+| `ledger` | 10 of 10 | 10 of 10 | 0 |
+| `webhook` | 5 of 10 | 5 of 10 | 0 |
+| `cart` | 7 of 10 | 8 of 10 | -10 |
+
+In the four slots other than `signature` the count is 27 against 27. In `signature` the model wrote a wrong function in all 20 runs. The 4 basic checks passed it every time, and the public tests rejected it every time. What T22 shows here is that the public tests of `signature` see a failure the basic checks cannot see. It does not show a gain spread over the slots.
+
+**Where the 12 checks still pass wrong code.** 13 silent defects remain with the gauge in view: `webhook` on Django in 5 of 5 runs, `discount` on Next.js in 5 of 5, and `cart` in 3 (1 on Django, 2 on Next.js).
+
+### Detection per run
+
+| Arm | Wrong runs | Never built | Built and rejected by the checks | Silent defects | Detected |
+| --- | --- | --- | --- | --- | --- |
+| `kit-bare` | 29 | 6 | 0 | 23 | 6 of 29, 20.7% (Wilson 9.8% to 38.4%) |
+| `kit-tests` | 31 | 7 | 11 | 13 | 18 of 31, 58.1% (Wilson 40.8% to 73.6%) |
+
+Of the 11 runs that the checks rejected, 10 are `signature` and 1 is `ledger` on Next.js. Per attempt, the gauge rejected 108 of 121 wrong attempts in `kit-tests` (89.3%, bootstrap 80.4% to 94.9%) and 36 of 59 in `kit-bare` (61.0%, bootstrap 30.8% to 77.4%). The per-attempt figure counts a repeated wrong answer once per attempt, so the per-run table is the one to read. No correct attempt was rejected in either arm: 19 of 19 and 21 of 21.
+
+### T12 and T13, secondary: undecidable
+
+| Thesis | Result | Verdict |
+| --- | --- | --- |
+| T12 | `discount`, `kit-tests`: all 10 runs passed the gauge and 5 failed the judge, 50.0%. Clopper-Pearson interval 18.7% to 81.3%, which contains 0.5. The 5 are the Next.js runs; the 5 Django runs are correct | `undecidable` |
+| T13 | Tokens per correct run: 32,660 in `kit-tests` (limits 17,397 to 64,267) and 15,883 in `kit-bare` (limits 7,784 to 33,322). Ratio 2.06, limits 0.43 to 9.63, which contain 1 | `undecidable` |
+
+### The loop
+
+| Arm | Runs | Attempts | Runs with more than one attempt | Gauge result changed | Judge result changed | Tokens of first attempts | Tokens of all attempts | Share after the first attempt |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `kit-bare` | 50 | 80 | 6 | 0 | 0 | 169,283 | 333,548 | 49.2% |
+| `kit-tests` | 50 | 140 | 18 | 0 | 0 | 180,970 | 620,531 | 70.8% |
+
+- In the 24 runs with more than one attempt, neither the gauge result nor the judge result changed between the first and the last attempt. The loop repaired nothing.
+- With a budget of one call every run would have ended with the same two results, for 350,253 of the 954,079 tokens (36.7%).
+- At the first attempt `kit-tests` spends 6.9% more tokens than `kit-bare`. The ratio of 2.06 per correct run is mostly the cost of retries that changed nothing.
+
+### Agreement inside a cell
+
+In 14 of the 20 cells the 5 runs agree on correct or wrong. The 6 mixed cells: `kit-bare` on Django `discount` (4 of 5 correct), Next.js `cart` (3 of 5) and Next.js `ledger` (4 of 5); `kit-tests` on Django `cart` (4 of 5), Next.js `cart` (1 of 5) and Next.js `ledger` (4 of 5). Cells are close to deterministic, as the exploratory runs suggested, and not fully so.
+
+### Against what was written before the run
+
+| Written on 2026-11-21 (section 2) | Result |
+| --- | --- |
+| T11 expected to end `refuted` | `refuted` |
+| T22 expected between 20 and 30 points, most of it from `signature`, and possibly `undecidable` | 20.0 points, all of it from `signature`. `supported`, not `undecidable` |
+| The loop expected to repair few runs or none | None in 24 runs |
 
 ## 5. Deviations from the preregistration
 
@@ -249,9 +341,27 @@ The seven other finished runs are kept as they are.
 
 **Who decided to resume.** The owner was away. After the first stop the assistant had told the owner that it could not restart the campaign by itself after a memory stop. The owner answered on 2026-11-21 "puedes continuar? te doy libertad 100%" (can you continue? I give you 100% freedom) and later "just continue and do your thing". The assistant resumed on 2026-11-22 under that instruction, after checking that 7.0 GB of memory were available.
 
+### The end of the campaign and the audit (2026-11-22)
+
+**The third launch finished by itself**, from 06:10 to 07:33 UTC, with the two changes above. The watchdog released memory 22 times. The lowest free memory seen at a poll was 1.2 GB in the first launch, 2.5 GB in the second and 1.4 GB in the third; the third was the moment the model loaded, and the release followed at once.
+
+**No fake run is among the 100.** No finished run has under 2 s of build time per call.
+
+**The audit found no machine failure.** 13 of the 100 runs ended without a build, all on Next.js: `webhook` in all 10 runs of both arms, `cart` in 2 runs of `kit-tests`, and `ledger` in 1 run of `kit-bare`. `bench/controls/rebuild-audit.mjs` built and started the final workspace of each one again. All 13 failed again with a build error in the model's own file, so all 13 are model errors and none was set aside. The rows are in [`data/confirmatory/rebuild-audit.csv`](data/confirmatory/rebuild-audit.csv).
+
+**The five runs set aside** are listed in [`data/confirmatory/set-aside.csv`](data/confirmatory/set-aside.csv). All five were recorded as wrong with the gauge not passed, which counts as a right decision. Their repeats: all five wrong again, three with the gauge not passed and two with the gauge passed. Had the set-aside records been kept in place of their repeats, the correct runs would be the same 19 and 21, and the right decisions of `kit-tests` would be 39 of 50, not 37. Setting them aside did not favour either verdict.
+
 **What the assistant saw.** To diagnose the stops, the assistant read the campaign log and the `metrics.json` of the three runs that ended without a build. The log shows, for each run, its hidden pass count, calls and tokens; the assistant read those lines for the first 8 runs and for the runs around the second stop, and the build flags and times of the result files of all finished runs. Nothing was counted across runs, no analysis command was run on the confirmatory data, and neither the criteria nor the design changed. The plan stays one look, after the 100 runs.
 
 ## 6. Limits
+
+Limits seen in the results of 2026-11-22:
+
+- **T22 rests on one slot.** All 20 points come from `signature`. With that slot left out, the two arms decide right equally often, 27 against 27. A different set of five slots could give a larger difference, or none.
+- **The two arms have different gauges.** `kit-bare` is decided by 4 checks and `kit-tests` by 12. T22 does not separate what the model sees from the size of the gauge that decides, and with a model that never repairs, the size of the gauge is the likely source.
+- **One 7B model.** A stronger model may write these five functions correctly at the first attempt, and then neither arm would have failures to detect. A stronger model may also use the feedback of the loop, which this one did not.
+- **Slots are strata, not a sample.** Ten pairs of stack and slot carry the information, and 14 of the 20 cells gave the same result in their 5 runs.
+- **The 12 checks have blind spots that are stable.** `webhook` on Django and `discount` on Next.js passed all 12 checks in 5 of 5 runs while wrong.
 
 These are the limits written with the design in `docs/context.md`.
 
@@ -265,7 +375,16 @@ These are the limits written with the design in `docs/context.md`.
 
 ## 7. What changes
 
-Nothing yet. The result will be read against [`docs/decisions.md`](../../docs/decisions.md).
+Read against [`docs/decisions.md`](../../docs/decisions.md) and [`docs/product.md`](../../docs/product.md) on 2026-11-22. Everything in this table is a reading by the assistant; the decisions are the owner's.
+
+| What the result says | What it changes |
+| --- | --- |
+| T11 is refuted for this scope | Gate G1, as written on 2026-11-17, names T11 or T18. It is not met. With the amendment proposed on 2026-11-21, which adds T22, it would be met for this scope. The owner decides on the amendment |
+| The gauge detects and the loop does not repair | For this model the value of the gauge is the decision at the end, not better code. The promise of approach P1 is that decision, and it should be measured with a budget of one call |
+| Retries cost 63% of the tokens and changed no result | A budget of 6 is waste for this model. The next designs use one call, or several independent samples with the gauge choosing among them |
+| The difference comes from one slot | The next question is how the detection changes with the size and the content of the gauge, over more slots. Five slots cannot answer it |
+| The stack matters more than the arm | Django gave 14 of 25 correct runs in each arm, and Next.js 5 and 7. T20 reads this in [E05](../E05-line-vs-workshop/README.md) |
+| The model wrote `signature` and `webhook` wrong in all 40 runs | These two slots are at the floor for this model. They can show detection and cannot show a gain in correctness |
 
 ### Open items before preregistering
 

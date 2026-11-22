@@ -1,0 +1,6 @@
+stack,arm,slot,run,started_utc,calls,built_per_attempt,build_ms,reason
+nextjs,kit-bare,ledger,4,2026-11-22T06:05:10Z,6,000000,135,recorded by the orphaned process after the second stop
+nextjs,kit-tests,cart,4,2026-11-22T06:05:51Z,6,000000,106,recorded by the orphaned process after the second stop
+nextjs,kit-tests,discount,4,2026-11-22T06:05:28Z,6,000000,107,recorded by the orphaned process after the second stop
+nextjs,kit-tests,signature,1,2026-11-21T16:25:18Z,6,111110,189875,last attempt failed right after the first stop
+nextjs,kit-tests,signature,4,2026-11-22T06:06:38Z,6,000000,119,recorded by the orphaned process after the second stop

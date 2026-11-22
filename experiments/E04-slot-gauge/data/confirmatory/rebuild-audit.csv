@@ -1,0 +1,14 @@
+stack,arm,slot,run,attempts,built_per_attempt,recorded_error,audit_built,audit_reason,reading,hash
+nextjs,kit-bare,ledger,4,6,000000,build: docker compose up failed,false,#11 22.97 lib/of/handlers.ts(18527): error TS2488: Type 'Promise<LedgerEntry[]>' must have a '[Symbol.iterator]()' method that returns an iterator.,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-bare,webhook,1,6,000000,build: docker compose up failed,false,#11 7.387 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-bare,webhook,2,6,000000,build: docker compose up failed,false,#11 6.973 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-bare,webhook,3,6,000000,build: docker compose up failed,false,#11 7.196 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-bare,webhook,4,6,000000,build: docker compose up failed,false,#11 7.155 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-bare,webhook,5,6,000000,build: docker compose up failed,false,#11 7.211 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-tests,cart,1,6,000000,build: docker compose up failed,false,#11 7.207 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-tests,cart,2,6,000000,build: docker compose up failed,false,#11 9.321 lib/of/cart.ts(226): error TS2307: Cannot find module 'date-fns' or its corresponding type declarations.,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-tests,webhook,1,6,000000,build: docker compose up failed,false,#11 7.158 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-tests,webhook,2,6,000000,build: docker compose up failed,false,#11 7.524 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-tests,webhook,3,6,000000,build: docker compose up failed,false,#11 7.044 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-tests,webhook,4,6,000000,build: docker compose up failed,false,#11 7.284 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
+nextjs,kit-tests,webhook,5,6,000000,build: docker compose up failed,false,#11 7.079 > Build error occurred,model error,3b3adef503d66d977fe99c64924513771c43d94abe4a77408a22ead031fb3b60
