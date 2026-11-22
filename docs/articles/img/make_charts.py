@@ -254,25 +254,13 @@ def chart_retries(total, first, n_multi):
     return img
 
 
-def cover():
-    img = Image.new("RGB", (1920, 1080), "#16202A")
-    d = ImageDraw.Draw(img)
-    f1, f2 = font(120, True), font(48)
-    text(d, (140, 440), "De los errores se aprende,", f1, "white")
-    text(d, (140, 590), "del éxito muy poco.", f1, "white")
-    d.rectangle([140, 650, 140 + 220, 658], fill=BLUE)
-    text(d, (140, 740), "OpenFabric · primer experimento · 100 repeticiones", f2, "#B8C0C8")
-    return img
-
-
 def main():
     correct, classes, slots, total, first, n_multi = load()
     OUT.mkdir(parents=True, exist_ok=True)
     for name, img in (("e04-correcto", chart_correct(correct)),
                       ("e04-decision", chart_decision(classes)),
                       ("e04-por-funcion", chart_by_slot(slots)),
-                      ("e04-reintentos", chart_retries(total, first, n_multi)),
-                      ("e04-portada", cover())):
+                      ("e04-reintentos", chart_retries(total, first, n_multi))):
         path = OUT / f"{name}.png"
         img.save(path, optimize=True)
         print("escrito", path, img.size)

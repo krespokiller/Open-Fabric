@@ -12,9 +12,15 @@ Esta es la historia de cómo llegué ahí, de la parte de mi idea que murió esa
 
 En la época del vapor, las cosas se hacían a medida, una por una. Con la electricidad llegó la línea de ensamblaje: piezas ya probadas, una línea que las arma y un control de calidad que decide qué sale y qué no.
 
+![Lámina I: el taller de vapor, donde cada pieza sale distinta](img/lamina-1-vapor.gif)
+
 Hoy la inteligencia artificial programa como un artesano. Todo desde cero, cada vez. Y a veces entrega algo que parece bueno y no lo es.
 
+![Lámina II: el mismo taller, ahora con un modelo de IA como motor](img/lamina-2-ia.gif)
+
 Mi apuesta se llama OpenFabric: que la IA trabaje como una fábrica. Que arme con piezas ya verificadas, que solo escriba el pedacito que falta, y que un control de calidad, al que llamo "el calibre", diga si eso pasa o no pasa.
+
+![Lámina III: la fábrica de OpenFabric, con catálogo, calibre y ensamblador](img/lamina-3-openfabric.png)
 
 No soy el primero en soñar con esto. En 1968, en una conferencia de la OTAN, Doug McIlroy propuso una industria de componentes de software. La consigna de aquellos días era pasar del software hecho en casa al software manufacturado. Han pasado casi sesenta años. Lo nuevo es que ahora quien ensambla puede ser una IA.
 

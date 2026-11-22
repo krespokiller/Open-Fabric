@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-label="Cover: a kitten with a robotic arm holds a blue piece. OpenFabric. De los errores se aprende, del éxito muy poco.">
+  <style>
+    text{font-family:"IBM Plex Mono",Consolas,monospace;fill:#9aa5b1}
+    .ln{stroke:#e4e7ea;stroke-width:13;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .soft{stroke:#9aa5b1;stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .plate{fill:#19212a}
+    .ink{fill:#e4e7ea}
+  </style>
+  <!-- background -->
+  <rect width="1920" height="1080" fill="#12171d"/>
+  <!-- plate IV: yellow offset block, plate, header -->
+  <rect x="94" y="94" width="1760" height="940" fill="#f0b72a"/>
+  <rect x="80" y="80" width="1760" height="940" fill="#19212a" stroke="#f0b72a" stroke-width="3"/>
+  <text x="120" y="134" style="font-size:30px;letter-spacing:3px;fill:#e4e7ea">LÁMINA IV</text>
+  <text x="1800" y="134" text-anchor="end" style="font-size:30px;letter-spacing:3px">EL ENSAMBLADOR</text>
+  <line x1="80" y1="160" x2="1840" y2="160" stroke="#34404c" stroke-width="3"/>
+  <!-- cat with robotic arm (same drawing as logo.svg, scaled) -->
+  <g transform="translate(6,46) scale(2)"><g transform="translate(6,-20)">
+    <!-- floor -->
+    <line x1="62" y1="440" x2="450" y2="440" class="soft"/>
+    <!-- tail: cable with yellow plug -->
+    <path d="M150 428 C70 430 52 360 92 332" class="soft" stroke-width="9"/>
+    <circle cx="94" cy="330" r="12" fill="#f0b72a"/>
+    <!-- body -->
+    <path d="M140 440 C140 352 170 312 220 312 C270 312 300 352 300 440 Z" class="ln plate"/>
+    <path d="M196 440 V382" class="ln" stroke-width="10"/>
+    <circle cx="252" cy="384" r="9" fill="#5cc185"/>
+    <!-- head with ears -->
+    <path d="M140 225 L130 130 L200 168 Q220 164 240 168 L310 130 L300 225 Q300 305 220 305 Q140 305 140 225 Z" class="ln plate"/>
+    <circle cx="188" cy="232" r="10" class="ink"/>
+    <circle cx="252" cy="232" r="10" class="ink"/>
+    <path d="M211 256 H229 L220 267 Z" fill="#e4a25a" stroke="#e4a25a" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M220 267 q-8 10 -17 4 M220 267 q8 10 17 4" class="ln" stroke-width="5"/>
+    <path d="M136 250 L100 242 M136 266 L102 274 M304 250 L322 246 M304 266 L322 270" class="soft" stroke-width="5"/>
+    <!-- arm: two segments, joints, wrist -->
+    <path d="M292 364 L380 332 L402 258" class="ln" stroke-width="22"/>
+    <circle cx="292" cy="364" r="15" class="ink"/>
+    <circle cx="380" cy="332" r="14" class="ink"/>
+    <circle cx="402" cy="258" r="13" class="ink"/>
+    <!-- gripper -->
+    <path d="M366 246 L366 186 M438 246 L438 186 M366 246 H438" class="ln" stroke-width="12"/>
+    <!-- piece -->
+    <rect x="375" y="194" width="54" height="48" fill="#6f9be0"/>
+  </g></g>
+  <!-- wordmark -->
+  <text x="1000" y="320" style="font-size:104px;font-weight:700;fill:#e4e7ea">OpenFabric</text>
+  <rect x="1004" y="352" width="200" height="8" fill="#f0b72a"/>
+  <!-- headline -->
+  <text style="font-size:84px;font-weight:700;fill:#e4e7ea">
+    <tspan x="1000" y="505">De los errores</tspan>
+    <tspan x="1000" y="601">se aprende,</tspan>
+    <tspan x="1000" y="697" style="fill:#f0b72a">del éxito</tspan>
+    <tspan x="1000" y="793" style="fill:#f0b72a">muy poco.</tspan>
+  </text>
+  <!-- subline -->
+  <text x="1000" y="945" style="font-size:38px">primer experimento · 100 repeticiones</text>
+</svg>

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="OpenFabric logo: a kitten with a robotic arm holding a blue square piece">
+  <style>
+    .ln{stroke:#e4e7ea;stroke-width:13;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .soft{stroke:#9aa5b1;stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .plate{fill:#19212a}
+    .ink{fill:#e4e7ea}
+  </style>
+  <!-- background: dark rounded plate -->
+  <rect x="5" y="5" width="502" height="502" rx="96" fill="#19212a" stroke="#e4e7ea" stroke-width="6"/>
+  <g transform="translate(6,-20)">
+    <!-- floor -->
+    <line x1="60" y1="440" x2="450" y2="440" class="soft"/>
+    <!-- tail: cable with yellow plug -->
+    <path d="M150 428 C70 430 52 360 92 332" class="soft" stroke-width="9"/>
+    <circle cx="94" cy="330" r="12" fill="#f0b72a"/>
+    <!-- body -->
+    <path d="M140 440 C140 352 170 312 220 312 C270 312 300 352 300 440 Z" class="ln plate"/>
+    <path d="M196 440 V382" class="ln" stroke-width="10"/>
+    <circle cx="252" cy="384" r="9" fill="#5cc185"/>
+    <!-- head with ears -->
+    <path d="M140 225 L130 130 L200 168 Q220 164 240 168 L310 130 L300 225 Q300 305 220 305 Q140 305 140 225 Z" class="ln plate"/>
+    <circle cx="188" cy="232" r="10" class="ink"/>
+    <circle cx="252" cy="232" r="10" class="ink"/>
+    <path d="M211 256 H229 L220 267 Z" fill="#e4a25a" stroke="#e4a25a" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M220 267 q-8 10 -17 4 M220 267 q8 10 17 4" class="ln" stroke-width="5"/>
+    <path d="M136 250 L100 242 M136 266 L102 274 M304 250 L322 246 M304 266 L322 270" class="soft" stroke-width="5"/>
+    <!-- arm: two segments, joints, wrist -->
+    <path d="M292 364 L380 332 L402 258" class="ln" stroke-width="22"/>
+    <circle cx="292" cy="364" r="15" class="ink"/>
+    <circle cx="380" cy="332" r="14" class="ink"/>
+    <circle cx="402" cy="258" r="13" class="ink"/>
+    <!-- gripper -->
+    <path d="M366 246 L366 186 M438 246 L438 186 M366 246 H438" class="ln" stroke-width="12"/>
+    <!-- piece -->
+    <rect x="375" y="194" width="54" height="48" fill="#6f9be0"/>
+  </g>
+</svg>

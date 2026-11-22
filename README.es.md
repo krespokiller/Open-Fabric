@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/img/logo.svg" width="160" alt="Logo de OpenFabric: un gatito con un brazo robótico que sostiene una pieza"></p>
+
 # OpenFabric
 
 **Una fábrica de código abierto de piezas de software verificadas, que los agentes de IA ensamblan en vez de escribir todo desde cero.**

@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/img/logo.svg" width="160" alt="OpenFabric logo: a kitten with a robotic arm holding a piece"></p>
+
 # OpenFabric
 
 **An open-source factory of verified software pieces that AI coding agents assemble instead of writing from scratch.**
