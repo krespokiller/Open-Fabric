@@ -1,8 +1,8 @@
-# OpenFabric no es React 2 ni Django 2. Es una línea de ensamblaje para la IA, y medí dónde se rompe
+# No es React 2 ni Django 2. Es una línea de ensamblaje para la IA, y medí dónde se rompe
 
 ![Un gatico con brazo robótico sostiene una pieza. Del fracaso se aprende, del éxito no mucho](img/e04-portada.png)
 
-A la 1 de la mañana me quedé sin tokens por segunda vez.
+La IA programa como un artesano del siglo XIX. Y a todos nos parece normal.
 
 Esta es la historia de una idea: lo que encontré al ponerla a prueba, el camino que no era y por dónde sigo.
 
