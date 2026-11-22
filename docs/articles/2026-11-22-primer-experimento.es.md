@@ -1,4 +1,4 @@
-# Quise demostrar que mi idea estaba mal. Una parte se rompió, y esa es la buena noticia
+# OpenFabric no es React 2 ni Django 2. Es una línea de ensamblaje para la IA, y medí dónde se rompe
 
 ![Un gatico con brazo robótico sostiene una pieza. Del fracaso se aprende, del éxito no mucho](img/e04-portada.png)
 
@@ -58,7 +58,7 @@ En una fábrica el control de calidad no hace que la máquina corte mejor. Impid
 
 ## ¿Qué sigue?
 
-Tres tesis, todavía por probar. Cada una sale de un dato, y cada una se puede caer.
+Tres tesis, todavía por probar. Cada una sale de un dato, y cada una se puede caer. Las dos primeras arreglan las estaciones. La tercera monta la línea.
 
 **1. El motor.** Con un modelo más inteligente, la historia cambia.
 
@@ -66,19 +66,20 @@ Tres tesis, todavía por probar. Cada una sale de un dato, y cada una se puede c
 - **La prueba:** el mismo experimento, cambiando solo el modelo.
 - **Se cae si:** con el modelo grande pasa lo mismo.
 
-**2. La regla pegada a la pieza.** Si la IA no lee la letra pequeña, cada pieza debe traer sus reglas encima, no perdidas en un documento largo.
+**2. La pieza trae el conocimiento.** Si la IA no lee la letra pequeña, la pieza debe traer sus reglas encima y lo delicado ya resuelto.
 
-- **El dato:** la regla de la firma estaba escrita en una tarea de 12 mil caracteres. En 70 intentos no la usó.
-- **La prueba:** las mismas funciones, con sus reglas escritas al lado del hueco.
-- **Se cae si:** con la regla al lado sigue fallando. Ahí el problema sería el motor.
+- **El dato:** la regla de la firma estaba escrita en una tarea de 12 mil caracteres y en 70 intentos no la usó. Y en el descuento Python acertó sin querer: 9 de 10, contra 0 de 10 en JavaScript con el mismo código.
+- **La prueba:** las mismas funciones, con sus reglas al lado del hueco y el redondeo ya hecho.
+- **Se cae si:** con todo eso al lado sigue fallando. Ahí el problema sería el motor.
 
-**3. Que lo fácil sea lo correcto.** Python acertó el descuento sin querer. Si la pieza ya trae resuelto lo delicado, hasta una IA pequeña lo hace bien.
+**3. La línea completa.** Una fábrica no es un solo brazo robótico. Son muchas estaciones, con un calibre entre una y otra.
 
-- **El dato:** mismo código en los dos lenguajes. 9 de 10 en Python, 0 de 10 en JavaScript.
-- **La prueba:** darle a JavaScript el redondeo ya hecho y ver si deja de fallar.
-- **Se cae si:** la IA no usa lo que la pieza le da.
+- **El dato:** con el servicio entero, 0 de 34. Con un solo hueco, 40 de 100. Y el compilador frenó 13 de las 100 repeticiones sin gastar nada: no todas las máquinas tienen que ser IA.
+- **La prueba:** armar el servicio estación por estación, con un calibre después de cada una, contra pedirlo entero.
+- **Se cae si:** la línea no entrega más servicios correctos, o los calibres dejan pasar tanto que el error llega al final.
+- **La condición:** que no se detenga. Si una estación falla, la línea aparta esa pieza, sigue con el resto y dice qué está esperando, qué falta y qué ayuda necesita.
 
-Las dos últimas son gratis: corren en mi computador. La primera cuesta plata.
+Primero las estaciones, después la línea. Con el calibre de hoy, cinco estaciones seguidas saldrían todas bien solo 7 de cada 100 veces.
 
 Voy a contar cada experimento aquí, salga bien o salga mal.
 
