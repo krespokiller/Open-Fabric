@@ -53,6 +53,7 @@ Start with [`vision.md`](vision.md) for the idea and [`method.md`](method.md) fo
 | [E08 composition](../experiments/E08-composition/README.md) | Not run | T19 | Proposed |
 | [E09 finding the piece](../experiments/E09-finding-the-piece/README.md) | Not run | T23 | Proposed |
 | [E10 lessons from the gauge](../experiments/E10-lessons-from-the-gauge/README.md) | Not run | T24 | Proposed |
+| [E11 gauge replay](../experiments/E11-gauge-replay/README.md) | Not run | T26 | Proposed |
 
 ## History
 

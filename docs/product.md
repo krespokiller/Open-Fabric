@@ -92,7 +92,7 @@ Two approaches follow from it: [P6](#p6-catalog-access-how-the-agent-finds-the-p
 
 | Id | Approach | Rests on | Gate | Rung today | Needs a paid model |
 | --- | --- | --- | --- | --- | --- |
-| P1 | Gauge kit for existing stacks | T22, T12, T13, T18 | G1 | 1, evidence in | No for rungs 1 and 2 |
+| P1 | Gauge kit for existing stacks | T22, T12, T13, T18, T26 | G1 | 1, evidence in | No for rungs 1 and 2 |
 | P2 | Catalog and assembler | T14, T15, T16, T20 | G2, G3, G7 | 0 | Yes for the full E05 |
 | P3 | Pieces that carry business questions | T17 | G5 | 0 | Not set; decided when E06 is designed |
 | P4 | Blueprints | T19 | G6 | 0 | Not set; decided when E08 is designed |
@@ -107,8 +107,8 @@ Two approaches follow from it: [P6](#p6-catalog-access-how-the-agent-finds-the-p
 | What it is | Each piece ships with a gauge, and the agent ends every gap with a pass or a known failure instead of a silent defect |
 | Who it is for | A developer whose agent works in an existing stack. Not set beyond that |
 | The promise | With the gauge in view, the agent's decision at the end of a gap agrees with the judge more often. Number: not set; fixed before its rung. For rung 1 the number is the d* of [T22](theses.md#rq1-gauge) |
-| Rests on | [T22](theses.md#rq1-gauge), [T12](theses.md#rq1-gauge) and [T13](theses.md#rq1-gauge) in [E04](../experiments/E04-slot-gauge/README.md); [T18](theses.md#rq1-gauge) in [E07](../experiments/E07-independent-gauge/README.md) |
-| Smallest version that can be tested | The `kit-tests` arm of E04 is already close to it. The prototype is that loop packaged for a real agent, measured in the bench against the same agent without it |
+| Rests on | [T22](theses.md#rq1-gauge), [T12](theses.md#rq1-gauge) and [T13](theses.md#rq1-gauge) in [E04](../experiments/E04-slot-gauge/README.md); [T18](theses.md#rq1-gauge) in [E07](../experiments/E07-independent-gauge/README.md); [T26](theses.md#rq1-gauge) in [E11](../experiments/E11-gauge-replay/README.md) |
+| Smallest version that can be tested | The `kit-tests` arm of E04 is already close to it. The prototype is that loop packaged for a real agent, measured in the bench against the same agent without it. Proposed rung 2 test, proposed by the assistant on 2026-11-22: replay the wrong answers of the E04 campaign against other gauges ([E11](../experiments/E11-gauge-replay/README.md)), with no model call |
 | Its test and number | Rung 1: the criteria of E04, fixed by the tag `prereg/E04` on 2026-11-21. Gate G1 was written before T22 existed and names T11 or T18; the amendment that adds T22 is in the [decision map](decisions.md#decision-map). Rung 2: not set; fixed before its rung |
 | What stops it | T22 refuted and T18 refuted |
 | Cost to test | The local model is enough for rungs 1 and 2 |

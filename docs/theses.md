@@ -1,6 +1,6 @@
 # Thesis registry
 
-On 2026-11-22, one thesis is supported (T22) and one is refuted (T11), for one 7B model (Qwen2.5-Coder), two stacks (Next.js and Django) and five slots. Of 24 theses, 5 ended undecidable (T1, T2, T3, T12, T13), 2 were superseded, 3 were discarded before running, 1 is supported, 1 is refuted and 12 are proposed.
+On 2026-11-22, one thesis is supported (T22) and one is refuted (T11), for one 7B model (Qwen2.5-Coder), two stacks (Next.js and Django) and five slots. Of 26 theses, 5 ended undecidable (T1, T2, T3, T12, T13), 2 were superseded, 3 were discarded before running, 1 is supported, 1 is refuted and 14 are proposed.
 
 | Status | Theses |
 | --- | --- |
@@ -9,7 +9,7 @@ On 2026-11-22, one thesis is supported (T22) and one is refuted (T11), for one 7
 | `undecidable` | T1, T2, T3, T12, T13 |
 | `superseded` | T4 (by T20), T5 (by T17) |
 | `discarded` | T8, T9, T10 |
-| `proposed` | T6, T7, T14, T15, T16, T17, T18, T19, T20, T21, T23, T24 |
+| `proposed` | T6, T7, T14, T15, T16, T17, T18, T19, T20, T21, T23, T24, T25, T26 |
 
 ## How to read this registry
 
@@ -44,6 +44,9 @@ Does a gauge the model can see make the gaps it fills correct, and does it matte
 | T13 | The gauge does not make the result more expensive | `kit-tests` against `kit-bare`, tokens per correct run | Secondary. Ratio of tokens per correct run, `kit-tests` over `kit-bare`, with the interval of the statistics tool. `supported` when the upper limit is below 1, `refuted` when the lower limit is above 1, otherwise `undecidable`. If either arm has no correct run, only a one-sided statement is made and the verdict is `undecidable`. **Fixed on 2026-11-21 by the tag `prereg/E04`. Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11, and confirmed by the owner on 2026-11-21.** | `undecidable` on 2026-11-22 | [E04](../experiments/E04-slot-gauge/README.md) |
 | T22 | With the gauge in view, the pass or no-pass decision at the end of a run agrees with the judge more often | `kit-tests` against `kit-bare`, on the outcome "the decision is right": the run passed its visible checks and is correct, or did not pass them and is wrong | The same test, strata, alpha and d* = 30 points as T11, on that outcome. The four classes of runs are reported per arm (delivered correct, known failure, silent defect, false rejection), because a gauge that always fails would also score well on wrong runs. **Fixed on 2026-11-21 by the tag `prereg/E04`. Proposed by the assistant on 2026-11-18, from the E04 exploratory campaign (8 of 10 against 5 of 10, not counted as evidence), and confirmed by the owner on 2026-11-21.** | `supported` on 2026-11-22 | [E04](../experiments/E04-slot-gauge/README.md) |
 | T18 | A gauge written by someone else detects more than one written by the same model | An arm where the agent writes its own tests against an arm with an independent gauge | To be fixed after the exploratory run. The report also counts the runs that pass every visible example and fail the hidden suite. **Not set** | `proposed` | [E07](../experiments/E07-independent-gauge/README.md) |
+| T26 | A gauge written independently from the contract of the piece lets through fewer real wrong answers than the current 12 checks, with the same model | The wrong answers of the E04 confirmatory campaign, replayed against the `public` gauge (the 12 checks of E04) and against an `independent` gauge. Outcome: the share of wrong answers that pass the gauge | To be fixed before any confirmatory replay. **Not set.** Proposed by the assistant on 2026-11-22, at the owner's request of that day | `proposed` | [E11](../experiments/E11-gauge-replay/README.md) |
+
+T26 differs from T18 in what it measures. T18 compares a gauge the agent wrote for itself with an independent one, during a run. T26 measures gauges on answers that already exist, with no model call.
 
 ## RQ2 Assembly
 
@@ -95,6 +98,9 @@ Does the result hold as models get stronger?
 | --- | --- | --- | --- | --- | --- |
 | T6 | It also helps with large models | The same experiment with a cloud model | To be fixed before running it. **Not set** | `proposed` | Not assigned |
 | T10 | The advantage holds with a bigger model | T9 repeated with a 14B model | T9 is also met with the 14B. **Proposed, never fixed** | `discarded` | [E02](../experiments/E02-no-model-controls/README.md) |
+| T25 | With a more capable model, the gauge in view raises correct runs and the loop repairs wrong answers | The design of E04 (same arms, slots, stacks and hidden suites) run with a more capable model. `kit-tests` against `kit-bare` on correct runs, and the share of runs with more than one attempt whose result changes after the first attempt | **Not set.** Stated by the owner on 2026-11-22 | `proposed` | Not assigned. It needs the owner's decision on model and budget, see the [open question](decisions.md#open-questions) |
+
+T25 differs from T6. T6 asks whether the piece helps with a large model. T25 asks whether the two things that failed in E04 with the 7B (the gauge in view raising correct runs, and the loop repairing wrong answers) change with a larger one.
 
 ## RQ7 Layers beyond backend
 
@@ -127,6 +133,8 @@ A criterion that the owner has not confirmed stays `proposed` and cannot be prer
 | T15 (revised), T20, T21 | Proposed. The owner has not confirmed them | The assistant | 2026-11-17 |
 | T22 | Proposed after the E04 exploratory campaign. Confirmed by the owner on 2026-11-21 and preregistered with the tag `prereg/E04` on 2026-11-21 | The assistant | 2026-11-18 |
 | T23, T24 | Never set. The theses were proposed by the assistant after the owner's request of the same day. The owner has not confirmed them | The assistant | 2026-11-21 |
+| T25 | Never set. The thesis was stated by the owner on 2026-11-22, after the E04 verdicts. The owner has not set a criterion | Nobody. The owner stated the thesis | 2026-11-22 |
+| T26 | Never set. The thesis was proposed by the assistant on 2026-11-22, at the owner's request of that day. The owner has not confirmed it | The assistant | 2026-11-22 |
 
 ## Notes
 

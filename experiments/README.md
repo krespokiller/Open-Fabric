@@ -18,6 +18,7 @@ Each folder holds one record. The rules are in [`docs/method.md`](../docs/method
 | [E08](E08-composition/README.md) | Not run | T19 | `proposed` | None yet | Do pieces that pass alone pass together? Only one piece exists |
 | [E09](E09-finding-the-piece/README.md) | Not run | T23 | `proposed` | None yet | Does the agent pick the right pieces from an index as often as from the whole catalog, with fewer tokens? Proposed by the assistant on 2026-11-21. The cards have no code behind them |
 | [E10](E10-lessons-from-the-gauge/README.md) | Not run | T24 | `proposed` | None yet | Do lessons kept from earlier visible check failures raise correctness at the first attempt? Proposed by the assistant on 2026-11-21. It runs after the E04 analysis |
+| [E11](E11-gauge-replay/README.md) | Not run | T26 | `proposed` | None yet | Do the wrong answers of the E04 campaign pass a gauge written independently less often than the 12 checks? It replays existing answers and calls no model. Proposed by the assistant on 2026-11-22 |
 
 T5 (superseded by T17), T6, T7 and T21 have no experiment. Their status is in [`docs/theses.md`](../docs/theses.md). E05's arms, the revision of T15, T20 and T21 are assistant proposals from 2026-11-17 that the owner has not confirmed.
 

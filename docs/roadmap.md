@@ -5,7 +5,7 @@ The instrument for E04 is landed on `main` and was hardened on 2026-11-18: the f
 | Horizon | Work | Theses | Waits for |
 | --- | --- | --- | --- |
 | [Now](#now) | The owner reads the E04 verdicts (2026-11-22) and decides on the amendment to G1 | T11, T12, T13, T22 | The owner's decision on the amendment to G1 |
-| [Next](#next) | E09 (T23), then E10 (T24), in the order of [`product.md`](product.md#the-order-today). Then E05 local variant (7B), if the owner chooses it, then E07, E06, E08 | T23 and T24, then T14 and T20 for the E05 local variant, then T18, T17, T19 | Nothing for E09. E10 needs the E04 attempts, which are recorded |
+| [Next](#next) | E11 (T26), then E09 (T23), then E10 (T24). The order of E09 and E10 follows [`product.md`](product.md#the-order-today). Then E05 local variant (7B), if the owner chooses it, then E07, E06, E08 | T26, then T23 and T24, then T14 and T20 for the E05 local variant, then T18, T17, T19 | Nothing for E11 and E09. T25 waits for the owner's decision on model and budget. E10 needs the E04 attempts, which are recorded |
 | [Later](#later) | Stronger models, the full E05 (T15 and T16 included), Go as a fifth stack, the frontend gauge | T6, T15, T16, T21, T7 | The owner's decision on model and budget. T14 supported |
 
 This roadmap was proposed by the assistant on 2026-11-17, from the owner's statement of the same day: research first, several theses on several stacks, and decide from the results. The instrument state and the order of the "Now" steps were updated on 2026-11-18. The order of those steps is a proposal of the assistant. The owner's standing instruction of 2026-11-17 is to start testing the theses once the path is clear.
@@ -105,11 +105,17 @@ The confirmatory campaign ran on 2026-11-22: 100 runs, one look. T22 is `support
 | 3 | [E06](../experiments/E06-piece-questions/README.md) | T17 | Do the piece's questions recover the rules the client did not say? | It tests promise 2 with a simulated client |
 | 4 | [E08](../experiments/E08-composition/README.md) | T19 | Do pieces that pass separately pass together? | It is the first experiment beyond the checkout task: a live-sales mix |
 
+### E11, proposed on 2026-11-22
+
+[E11](../experiments/E11-gauge-replay/README.md) (T26) comes before E09 and E10. The assistant proposed it on 2026-11-22, at the owner's request of that day. It needs no model, it uses data that already exists (the answers of E04), and it answers the question E04 left open about P1: how many wrong answers a gauge lets through.
+
+T25 (a more capable model, stated by the owner on 2026-11-22) has no experiment. It waits for the owner's decision on model and budget, see the [open question](decisions.md#open-questions).
+
 ### E09 and E10, proposed on 2026-11-21
 
 Both were proposed by the assistant on 2026-11-21, after the owner's request of that day. Neither is designed or confirmed, and neither needs a paid model. See [`product.md`](product.md#deterministic-first).
 
-- [E09](../experiments/E09-finding-the-piece/README.md) (T23) comes first: it needs no verdict, no Docker and no paid model.
+- [E09](../experiments/E09-finding-the-piece/README.md) (T23) comes first of the two: it needs no verdict, no Docker and no paid model.
 - [E10](../experiments/E10-lessons-from-the-gauge/README.md) (T24) comes second: its lessons come from the attempts of E04, whose analysis is done on 2026-11-22.
 
 ## Later
