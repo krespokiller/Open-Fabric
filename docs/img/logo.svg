@@ -1,37 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="OpenFabric logo: a kitten with a robotic arm holding a blue square piece">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="OpenFabric logo: a cute kitten with a robotic arm holding a blue square piece">
   <style>
-    .ln{stroke:#e4e7ea;stroke-width:13;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .ln{stroke:#e4e7ea;stroke-width:11;fill:none;stroke-linecap:round;stroke-linejoin:round}
     .soft{stroke:#9aa5b1;stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round}
-    .plate{fill:#19212a}
+    .fur{fill:#2a3644}
     .ink{fill:#e4e7ea}
+    @media (prefers-reduced-motion:no-preference){
+      /* every period divides 4 s, so the drawing loops seamlessly */
+      .blink{transform-box:fill-box;transform-origin:center;animation:blink 4s linear infinite}
+      .arm{transform-origin:272px 384px;animation:lift 4s ease-in-out infinite}
+      .fore{transform-origin:342px 366px;animation:bend 4s ease-in-out infinite}
+      .tail{transform-origin:152px 418px;animation:sway 2s ease-in-out infinite}
+      .halo{transform-box:fill-box;transform-origin:center;animation:pulse 2s ease-in-out infinite}
+    }
+    @keyframes blink{0%,45%,55%,100%{transform:scaleY(1)}48%,52%{transform:scaleY(.1)}}
+    @keyframes lift{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-8deg)}}
+    @keyframes bend{0%,100%{transform:rotate(0deg)}50%{transform:rotate(4deg)}}
+    @keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(6deg)}}
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:.15}50%{transform:scale(1.7);opacity:.55}}
   </style>
-  <!-- background: dark rounded plate -->
+
+  <!-- plate -->
   <rect x="5" y="5" width="502" height="502" rx="96" fill="#19212a" stroke="#e4e7ea" stroke-width="6"/>
-  <g transform="translate(6,-20)">
-    <!-- floor -->
-    <line x1="60" y1="440" x2="450" y2="440" class="soft"/>
-    <!-- tail: cable with yellow plug -->
-    <path d="M150 428 C70 430 52 360 92 332" class="soft" stroke-width="9"/>
-    <circle cx="94" cy="330" r="12" fill="#f0b72a"/>
-    <!-- body -->
-    <path d="M140 440 C140 352 170 312 220 312 C270 312 300 352 300 440 Z" class="ln plate"/>
-    <path d="M196 440 V382" class="ln" stroke-width="10"/>
-    <circle cx="252" cy="384" r="9" fill="#5cc185"/>
-    <!-- head with ears -->
-    <path d="M140 225 L130 130 L200 168 Q220 164 240 168 L310 130 L300 225 Q300 305 220 305 Q140 305 140 225 Z" class="ln plate"/>
-    <circle cx="188" cy="232" r="10" class="ink"/>
-    <circle cx="252" cy="232" r="10" class="ink"/>
-    <path d="M211 256 H229 L220 267 Z" fill="#e4a25a" stroke="#e4a25a" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M220 267 q-8 10 -17 4 M220 267 q8 10 17 4" class="ln" stroke-width="5"/>
-    <path d="M136 250 L100 242 M136 266 L102 274 M304 250 L322 246 M304 266 L322 270" class="soft" stroke-width="5"/>
-    <!-- arm: two segments, joints, wrist -->
-    <path d="M292 364 L380 332 L402 258" class="ln" stroke-width="22"/>
-    <circle cx="292" cy="364" r="15" class="ink"/>
-    <circle cx="380" cy="332" r="14" class="ink"/>
-    <circle cx="402" cy="258" r="13" class="ink"/>
-    <!-- gripper -->
-    <path d="M366 246 L366 186 M438 246 L438 186 M366 246 H438" class="ln" stroke-width="12"/>
-    <!-- piece -->
-    <rect x="375" y="194" width="54" height="48" fill="#6f9be0"/>
+
+  <!-- floor -->
+  <line x1="60" y1="442" x2="452" y2="442" class="soft"/>
+
+  <!-- tail: cable with yellow plug (sways) -->
+  <g class="tail">
+    <path d="M154 424 C78 430 56 366 92 330" class="soft" stroke-width="9"/>
+    <rect x="80" y="304" width="24" height="30" rx="7" fill="#f0b72a" transform="rotate(35 92 320)"/>
+    <path d="M86 306 l-4 -9 M99 300 l4 -9" class="ln" stroke-width="5" transform="rotate(35 92 320)"/>
   </g>
+
+  <!-- body -->
+  <path d="M150 442 C146 360 172 322 212 322 C252 322 278 360 274 442 Z" class="ln fur"/>
+  <path d="M172 442 V412" class="soft" stroke-width="5"/>
+  <circle cx="238" cy="388" r="10" fill="#5cc185"/>
+  <circle cx="238" cy="388" r="10" fill="#5cc185" class="halo"/>
+
+  <!-- arm (lifts): shoulder, upper arm, elbow, forearm, wrist, gripper, piece -->
+  <g class="arm">
+    <path d="M272 384 L342 366" class="ln" stroke-width="20"/>
+    <g class="fore">
+      <path d="M342 366 L388 304" class="ln" stroke-width="20"/>
+      <!-- gripper: two fingers around the piece -->
+      <path d="M364 292 H414 M364 292 V244 M414 292 V244" class="ln" stroke-width="10"/>
+      <rect x="371" y="248" width="36" height="36" rx="5" fill="#6f9be0"/>
+      <circle cx="388" cy="304" r="10" class="ink"/>
+    </g>
+    <circle cx="342" cy="366" r="12" class="ink"/>
+    <circle cx="272" cy="384" r="14" class="ink"/>
+  </g>
+
+  <!-- head: ears behind, then the big round head -->
+  <path d="M108 210 Q88 98 124 82 Q158 78 200 122" class="ln fur"/>
+  <path d="M314 210 Q334 98 298 82 Q264 78 222 122" class="ln fur"/>
+  <path d="M118 172 Q112 118 128 106 Q148 108 176 132 Z" class="soft" stroke-width="5" fill="#e4a25a" fill-opacity=".35"/>
+  <path d="M304 172 Q310 118 294 106 Q274 108 246 132 Z" class="soft" stroke-width="5" fill="#e4a25a" fill-opacity=".35"/>
+  <ellipse cx="211" cy="214" rx="124" ry="98" class="ln fur"/>
+
+  <!-- face -->
+  <g class="blink">
+    <ellipse cx="164" cy="220" rx="21" ry="25" fill="#12171d"/>
+    <circle cx="171" cy="210" r="7" class="ink"/>
+    <circle cx="158" cy="229" r="3.5" class="ink"/>
+  </g>
+  <g class="blink">
+    <ellipse cx="258" cy="220" rx="21" ry="25" fill="#12171d"/>
+    <circle cx="265" cy="210" r="7" class="ink"/>
+    <circle cx="252" cy="229" r="3.5" class="ink"/>
+  </g>
+  <ellipse cx="124" cy="252" rx="14" ry="8" fill="#e8735e" fill-opacity=".5"/>
+  <ellipse cx="298" cy="252" rx="14" ry="8" fill="#e8735e" fill-opacity=".5"/>
+  <path d="M203 246 H219 L211 256 Z" fill="#e4a25a" stroke="#e4a25a" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M211 256 V261 M211 261 q-6 9 -16 2 M211 261 q6 9 16 2" class="ln" stroke-width="3.5"/>
+  <path d="M96 232 L72 224 M98 248 L72 252 M326 232 L350 224 M324 248 L350 252" class="soft" stroke-width="4.5"/>
 </svg>

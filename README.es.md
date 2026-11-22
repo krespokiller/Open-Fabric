@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/img/logo.svg" width="160" alt="Logo de OpenFabric: un gatito con un brazo robótico que sostiene una pieza"></p>
+<p align="center"><img src="docs/img/logo.svg" width="200" alt="Logo de OpenFabric: un gatito con un brazo robótico que sostiene una pieza"></p>
 
 # OpenFabric
 

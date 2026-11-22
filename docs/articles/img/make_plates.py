@@ -5,7 +5,7 @@ Run from the repository root:  python docs/articles/img/make_plates.py
 Needs headless Microsoft Edge (found via ProgramFiles env vars) and Pillow.
 Outputs, next to this script:
   lamina-{1-vapor,2-ia,3-openfabric}.png   static, 1600 px wide
-  lamina-{1-vapor,2-ia}.{webp,gif}         seamless animated loops, 1200 px wide
+  lamina-{1-vapor,2-ia,3-openfabric}.{webp,gif}   seamless animated loops, 1200 px wide
 """
 import os
 import re
@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from PIL import Image, ImageChops
@@ -36,10 +37,19 @@ PLATES = {
 # Loop: (frames, frame duration ms). Plate I: wheel 6 s/turn, symmetric every
 # quarter turn = 1.5 s; belt pattern 8 units, 16 units in 1.2 s -> 0.6 s; lcm = 3.0 s.
 # Plate II: wheel 1.6 s/turn -> 0.4 s; belt 0.6 s; lcm = 1.2 s.
+# Plate III: 8 s (pieces, stack layers: 8 s; arm and gauge light: 2 s; rollers: 2 s/turn,
+# symmetric every quarter turn = 0.5 s); 160 frames x 50 ms = 20 fps.
 LOOPS = {
     "lamina-1-vapor": (30, 100),
     "lamina-2-ia": (24, 50),
+    "lamina-3-openfabric": (160, 50),
 }
+# Time of the loop at which the static PNG is taken. Default 0. Plate III: the stack is complete
+# and the next piece (orange) sits in the gauge with "pasa" lit.
+STATIC_T = {"lamina-3-openfabric": 0.8}
+# Plates whose GIF palette is built from several frames instead of the first one only.
+WIDE_PALETTE = {"lamina-3-openfabric"}
+WORKERS = 4
 
 
 def find_edge():
@@ -81,6 +91,7 @@ class Renderer:
     def __init__(self, edge, tmp, svg_text):
         self.edge, self.tmp, self.svg = edge, Path(tmp), svg_text
         self.n = 0
+        self.tmp.mkdir(parents=True, exist_ok=True)
 
     def render(self, name, width, t=None):
         x0, y0, x1, y1 = box(name)
@@ -118,11 +129,33 @@ def diff_pixels(a, b):
     return sum(d.histogram()[25:])
 
 
+def render_many(edge, tmp, svg_text, name, width, times):
+    """Render several times in parallel, one Edge profile per worker; keeps the order of `times`."""
+    renderers = [Renderer(edge, Path(tmp) / f"w{i}", svg_text) for i in range(WORKERS)]
+    chunks = [list(enumerate(times))[i::WORKERS] for i in range(WORKERS)]
+
+    def work(i):
+        return [(j, renderers[i].render(name, width, t)) for j, t in chunks[i]]
+
+    with ThreadPoolExecutor(WORKERS) as ex:
+        out = dict(x for part in ex.map(work, range(WORKERS)) for x in part)
+    return [out[j] for j in range(len(times))]
+
+
 def save_anim(frames, name, dur):
     webp = OUT / f"{name}.webp"
     frames[0].save(webp, save_all=True, append_images=frames[1:], loop=0,
                    duration=dur, quality=80, method=6)
-    pal = frames[0].quantize(colors=64, method=Image.Quantize.MEDIANCUT)
+    if name in WIDE_PALETTE:
+        # Fades and glows create intermediate colours: sample the whole loop for the palette.
+        step = max(1, len(frames) // 8)
+        sample = frames[::step]
+        sheet = Image.new("RGB", (frames[0].width, frames[0].height * len(sample)))
+        for i, f in enumerate(sample):
+            sheet.paste(f, (0, i * f.height))
+        pal = sheet.quantize(colors=128, method=Image.Quantize.MEDIANCUT)
+    else:
+        pal = frames[0].quantize(colors=64, method=Image.Quantize.MEDIANCUT)
     q = [f.quantize(palette=pal, dither=Image.Dither.NONE) for f in frames]
     gif = OUT / f"{name}.gif"
     q[0].save(gif, save_all=True, append_images=q[1:], loop=0, duration=dur,
@@ -147,21 +180,17 @@ def main():
         if n < 100:
             raise RuntimeError("animation not applied by Edge")
 
-        # 1. Static PNGs (frozen at t=0).
+        # 1. Static PNGs (frozen at t=0, or at STATIC_T).
         for name in PLATES:
-            im = r.render(name, STATIC_W, 0.0)
+            im = r.render(name, STATIC_W, STATIC_T.get(name, 0.0))
             im.save(OUT / f"{name}.png", optimize=True)
             print(f"{name}.png {im.size}")
 
-        # 2. Plate III motion check: two times must be identical.
-        c0 = r.render("lamina-3-openfabric", ANIM_W, 0.0)
-        c1 = r.render("lamina-3-openfabric", ANIM_W, 0.37)
-        print(f"plate III t=0 vs t=0.37 differing px: {diff_pixels(c0, c1)}")
-
-        # 3. Loops.
+        # 2. Loops.
         for name, (count, dur) in LOOPS.items():
-            frames = [r.render(name, ANIM_W, i * dur / 1000.0) for i in range(count)]
-            seam = r.render(name, ANIM_W, count * dur / 1000.0)
+            times = [i * dur / 1000.0 for i in range(count)] + [count * dur / 1000.0]
+            frames = render_many(edge, tmp, svg_text, name, ANIM_W, times)
+            seam = frames.pop()
             mid = diff_pixels(frames[0], frames[1])
             print(f"{name}: {count} frames x {dur} ms = {count * dur / 1000:.1f} s; "
                   f"seam diff (t=end vs frame 0): {diff_pixels(seam, frames[0])} px; "

@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/img/logo.svg" width="160" alt="OpenFabric logo: a kitten with a robotic arm holding a piece"></p>
+<p align="center"><img src="docs/img/logo.svg" width="200" alt="OpenFabric logo: a kitten with a robotic arm holding a piece"></p>
 
 # OpenFabric
 
