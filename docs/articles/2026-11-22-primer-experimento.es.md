@@ -4,7 +4,7 @@
 
 A la 1 de la mañana me quedé sin tokens por segunda vez.
 
-Esta es la historia de dos semanas probando una idea: lo que encontré, el camino que no era y por dónde sigo.
+Esta es la historia de una idea: lo que encontré al ponerla a prueba, el camino que no era y por dónde sigo.
 
 ## La fábrica
 
@@ -36,9 +36,9 @@ Con eso medimos dos caminos.
 
 ## El camino que no era
 
-**Darle todo el trabajo a la IA.** Le pedimos el servicio completo 34 veces. Correctos: cero.
+**Darle todo el trabajo a la IA.** No funciona. Le pedimos el servicio completo y no salió bien ni una vez: 0 de 34.
 
-**Mostrarle las pruebas y dejarla corregir.** Cien repeticiones llenando una sola función. Con las pruebas a la vista acertó 19 de 50. Sin ellas, 21 de 50. Y cuando se equivocó y la dejamos reintentar, no arregló ni un error: 24 de 24 quedaron igual.
+**Mostrarle las pruebas y dejarla corregir.** Tampoco. Con las pruebas a la vista no programó mejor: acertó 19 de 50, contra 21 de 50 sin ellas. Y cuando se equivocó y la dejamos reintentar, no arregló ni un error: 24 de 24 quedaron igual.
 
 ![Ver las pruebas no la hizo programar mejor](img/e04-correcto.png)
 
