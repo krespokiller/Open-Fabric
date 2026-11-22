@@ -151,6 +151,8 @@ The map says which verdicts justify building which thing. No product code is wri
 
 **Amendment to G1, proposed by the assistant on 2026-11-21. Not confirmed by the owner.** G1 was written before T22 existed. The proposal is that G1 reads "T11, T22 or T18 `supported`". The three verdicts justify different promises: T11 says the gauge makes the model write correct code more often, T22 says the gauge tells a correct result from a wrong one more often, and T18 says an independent gauge detects more. The amendment was written before the confirmatory data of E04 was analysed. When writing it the assistant knew the exploratory runs of E04, which favour T22 over T11 and are not evidence, and had read the log lines of the first 8 confirmatory runs while repairing the campaign (see [E04](../experiments/E04-slot-gauge/README.md#5-deviations-from-the-preregistration)).
 
+**State on 2026-11-22.** The E04 confirmatory campaign gave T11 `refuted` and T22 `supported`, for one 7B model, two stacks and five slots. T22's estimate of 20 points is below d* = 30 points, and the whole difference comes from the `signature` slot. G1 as written (T11 or T18 `supported`) is not met. G1 with the amendment (T11, T22 or T18 `supported`) would be met for that scope. The owner decides whether the amendment is adopted. See [`theses.md`](theses.md#verdicts-of-e04-2026-11-22).
+
 The map replaces the build rule proposed on 2026-11-16:
 
 | Rule of 2026-11-16 | Where it is now |

@@ -1,13 +1,14 @@
 # Thesis registry
 
-No thesis has been supported or refuted yet. Of 24 theses, 3 ended undecidable, 2 were superseded, 3 were discarded before running, 4 are preregistered and 12 are proposed.
+On 2026-11-22, one thesis is supported (T22) and one is refuted (T11), for one 7B model (Qwen2.5-Coder), two stacks (Next.js and Django) and five slots. Of 24 theses, 5 ended undecidable (T1, T2, T3, T12, T13), 2 were superseded, 3 were discarded before running, 1 is supported, 1 is refuted and 12 are proposed.
 
 | Status | Theses |
 | --- | --- |
-| `undecidable` | T1, T2, T3 |
+| `supported` | T22 |
+| `refuted` | T11 |
+| `undecidable` | T1, T2, T3, T12, T13 |
 | `superseded` | T4 (by T20), T5 (by T17) |
 | `discarded` | T8, T9, T10 |
-| `preregistered` | T11, T12, T13, T22 |
 | `proposed` | T6, T7, T14, T15, T16, T17, T18, T19, T20, T21, T23, T24 |
 
 ## How to read this registry
@@ -38,10 +39,10 @@ Does a gauge the model can see make the gaps it fills correct, and does it matte
 
 | # | Thesis | Primary comparison | Criterion | Status | Experiment |
 | --- | --- | --- | --- | --- | --- |
-| T11 | Having the gauge in view improves correctness when filling a slot | `kit-tests` against `kit-bare` | Exact conditional Cochran-Mantel-Haenszel test stratified by stack and slot, one-sided alpha 0.025: `supported` needs a significant test and a positive observed difference in every stack; `refuted` when the Newcombe upper limit of the difference is below d*, with d* = 30 percentage points. One look of 5 runs per cell (100 runs), proposed after the exploratory campaign. **Fixed on 2026-11-21 by the tag `prereg/E04`. Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11, and confirmed by the owner on 2026-11-21.** See [the note on T11](#t11-was-revised-on-2026-11-18) | `preregistered` | [E04](../experiments/E04-slot-gauge/README.md) |
-| T12 | A gauge that does not cover the subtle rule gives false confidence | Inside `kit-tests`, discount slot: visible checks against hidden tests | Secondary, discount slot, `kit-tests` only. False confidence = runs where the gauge passes and the judge fails, divided by runs where the gauge passes. `supported` when the Clopper-Pearson lower limit (95%) is above 0.5, `refuted` when the upper limit is below 0.5, otherwise `undecidable`; "not estimable" when no run passes the gauge. The public test P1 does not exercise half-to-even rounding. With about 10 to 12 runs it will often be `undecidable`. **Fixed on 2026-11-21 by the tag `prereg/E04`. Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11, and confirmed by the owner on 2026-11-21.** | `preregistered` | [E04](../experiments/E04-slot-gauge/README.md) |
-| T13 | The gauge does not make the result more expensive | `kit-tests` against `kit-bare`, tokens per correct run | Secondary. Ratio of tokens per correct run, `kit-tests` over `kit-bare`, with the interval of the statistics tool. `supported` when the upper limit is below 1, `refuted` when the lower limit is above 1, otherwise `undecidable`. If either arm has no correct run, only a one-sided statement is made and the verdict is `undecidable`. **Fixed on 2026-11-21 by the tag `prereg/E04`. Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11, and confirmed by the owner on 2026-11-21.** | `preregistered` | [E04](../experiments/E04-slot-gauge/README.md) |
-| T22 | With the gauge in view, the pass or no-pass decision at the end of a run agrees with the judge more often | `kit-tests` against `kit-bare`, on the outcome "the decision is right": the run passed its visible checks and is correct, or did not pass them and is wrong | The same test, strata, alpha and d* = 30 points as T11, on that outcome. The four classes of runs are reported per arm (delivered correct, known failure, silent defect, false rejection), because a gauge that always fails would also score well on wrong runs. **Fixed on 2026-11-21 by the tag `prereg/E04`. Proposed by the assistant on 2026-11-18, from the E04 exploratory campaign (8 of 10 against 5 of 10, not counted as evidence), and confirmed by the owner on 2026-11-21.** | `preregistered` | [E04](../experiments/E04-slot-gauge/README.md) |
+| T11 | Having the gauge in view improves correctness when filling a slot | `kit-tests` against `kit-bare` | Exact conditional Cochran-Mantel-Haenszel test stratified by stack and slot, one-sided alpha 0.025: `supported` needs a significant test and a positive observed difference in every stack; `refuted` when the Newcombe upper limit of the difference is below d*, with d* = 30 percentage points. One look of 5 runs per cell (100 runs), proposed after the exploratory campaign. **Fixed on 2026-11-21 by the tag `prereg/E04`. Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11, and confirmed by the owner on 2026-11-21.** See [the note on T11](#t11-was-revised-on-2026-11-18) | `refuted` on 2026-11-22 | [E04](../experiments/E04-slot-gauge/README.md) |
+| T12 | A gauge that does not cover the subtle rule gives false confidence | Inside `kit-tests`, discount slot: visible checks against hidden tests | Secondary, discount slot, `kit-tests` only. False confidence = runs where the gauge passes and the judge fails, divided by runs where the gauge passes. `supported` when the Clopper-Pearson lower limit (95%) is above 0.5, `refuted` when the upper limit is below 0.5, otherwise `undecidable`; "not estimable" when no run passes the gauge. The public test P1 does not exercise half-to-even rounding. With about 10 to 12 runs it will often be `undecidable`. **Fixed on 2026-11-21 by the tag `prereg/E04`. Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11, and confirmed by the owner on 2026-11-21.** | `undecidable` on 2026-11-22 | [E04](../experiments/E04-slot-gauge/README.md) |
+| T13 | The gauge does not make the result more expensive | `kit-tests` against `kit-bare`, tokens per correct run | Secondary. Ratio of tokens per correct run, `kit-tests` over `kit-bare`, with the interval of the statistics tool. `supported` when the upper limit is below 1, `refuted` when the lower limit is above 1, otherwise `undecidable`. If either arm has no correct run, only a one-sided statement is made and the verdict is `undecidable`. **Fixed on 2026-11-21 by the tag `prereg/E04`. Proposed by the assistant on 2026-11-18, replacing the criterion of 2026-11-11, and confirmed by the owner on 2026-11-21.** | `undecidable` on 2026-11-22 | [E04](../experiments/E04-slot-gauge/README.md) |
+| T22 | With the gauge in view, the pass or no-pass decision at the end of a run agrees with the judge more often | `kit-tests` against `kit-bare`, on the outcome "the decision is right": the run passed its visible checks and is correct, or did not pass them and is wrong | The same test, strata, alpha and d* = 30 points as T11, on that outcome. The four classes of runs are reported per arm (delivered correct, known failure, silent defect, false rejection), because a gauge that always fails would also score well on wrong runs. **Fixed on 2026-11-21 by the tag `prereg/E04`. Proposed by the assistant on 2026-11-18, from the E04 exploratory campaign (8 of 10 against 5 of 10, not counted as evidence), and confirmed by the owner on 2026-11-21.** | `supported` on 2026-11-22 | [E04](../experiments/E04-slot-gauge/README.md) |
 | T18 | A gauge written by someone else detects more than one written by the same model | An arm where the agent writes its own tests against an arm with an independent gauge | To be fixed after the exploratory run. The report also counts the runs that pass every visible example and fail the hidden suite. **Not set** | `proposed` | [E07](../experiments/E07-independent-gauge/README.md) |
 
 ## RQ2 Assembly
@@ -169,7 +170,7 @@ The criterion proposed on 2026-11-11 for T11 was a difference of 20 points with 
 
 The method gives the example: 10 correct of 25 against 15 of 25 is a 20-point difference with a Fisher exact p of 0.26. The method also says a criterion that the planned runs cannot detect is not preregistered. The anchor of this note used to read "T11 must be revised before preregistering".
 
-The assistant revised T11, T12 and T13 on 2026-11-18. The owner confirmed the revision on 2026-11-21, and E04 was preregistered with the tag `prereg/E04` on the same day. The exploratory campaign ran on 2026-11-18, and the confirmatory campaign has not run.
+The assistant revised T11, T12 and T13 on 2026-11-18. The owner confirmed the revision on 2026-11-21, and E04 was preregistered with the tag `prereg/E04` on the same day. The exploratory campaign ran on 2026-11-18, and the confirmatory campaign ran on 2026-11-22 (see the next section).
 
 | | Before (2026-11-11) | After (2026-11-18) |
 | --- | --- | --- |
@@ -183,6 +184,22 @@ The assistant revised T11, T12 and T13 on 2026-11-18. The owner confirmed the re
 Why 30 points: in three of the five slots (`signature`, `webhook`, `ledger`) `kit-bare` gets no error signal and stops at its first attempt, so if the gauge matters the difference should be large. It is also the smallest difference that the plan table detects with about 100 runs, and the plan keeps the false-refutation rate at d* below 2.5%. A true difference below 30 points is expected to end `undecidable` or `supported`. The exploratory campaign of E04 ran on 2026-11-18. The owner confirmed the criteria on 2026-11-21, and E04 was preregistered with the tag `prereg/E04` on the same day. See [E04](../experiments/E04-slot-gauge/README.md).
 
 The same check applies to T14. Its proposed criterion is also 20 points, and its runs per arm are not set yet.
+
+### Verdicts of E04 (2026-11-22)
+
+E04 ran its confirmatory campaign on 2026-11-22: 100 runs, 5 per cell, one look, against the criteria fixed by the tag `prereg/E04`. Every verdict holds for one model (Qwen2.5-Coder 7B), two stacks (Next.js and Django) and five slots. The record is [E04](../experiments/E04-slot-gauge/README.md).
+
+| Thesis | Verdict | Numbers |
+| --- | --- | --- |
+| T11 | `refuted` | Correct runs: `kit-tests` 19 of 50, `kit-bare` 21 of 50. Difference -4.0 points, interval -23.1 to +15.5 points. The upper limit is below d* = 30 points. Exact one-sided p = 0.88 |
+| T22 | `supported` | Right decisions: `kit-tests` 37 of 50, `kit-bare` 27 of 50. Difference +20.0 points, interval +0.3 to +37.6 points, exact one-sided p = 0.0018, +20 points in each stack |
+| T12 | `undecidable` | Discount slot, `kit-tests`: 5 of the 10 runs that passed the gauge failed the judge. The 95% Clopper-Pearson interval, 18.7% to 81.3%, contains 0.5 |
+| T13 | `undecidable` | Tokens per correct run: 32,660 for `kit-tests` and 15,883 for `kit-bare`. Ratio 2.06, limits 0.43 to 9.63, which contain 1 |
+
+Two limits on the `supported` verdict of T22:
+
+1. `supported` means the difference is above zero and d* is not excluded. The estimate is 20 points, below the 30 points named as d*.
+2. The whole difference comes from one slot, `signature`: 10 of 10 right decisions against 0 of 10. In the other four slots together the count is 27 against 27.
 
 ### T15 was revised on 2026-11-17
 

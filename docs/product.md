@@ -6,11 +6,11 @@ Summary:
 
 - The registry orders the claims. This document orders the product: seven approaches, each written so it can be tested and stopped.
 - Every approach climbs the same five rungs. A rung is passed by a number written before it runs.
-- Nothing of the product is built. Only P1 is in progress, at rung 1, and E04 has no verdict yet.
+- Nothing of the product is built. Only P1 is in progress, at rung 1. E04 gave its verdicts on 2026-11-22: T22 supported (20 points, below d* = 30, all from the `signature` slot) and T11 refuted. P1 passes rung 1 only when the owner decides the amendment to G1.
 
 | Id | Approach | Gate | Rung today | State |
 | --- | --- | --- | --- | --- |
-| P1 | Gauge kit for existing stacks | G1 | 1 | Rung 1 in progress |
+| P1 | Gauge kit for existing stacks | G1 | 1, evidence in | Rung 1: evidence in, waits for the owner |
 | P2 | Catalog and assembler (the production line) | G2, G3, G7 | 0 | Stated |
 | P3 | Pieces that carry business questions | G5 | 0 | Stated |
 | P4 | Blueprints | G6 | 0 | Stated |
@@ -92,7 +92,7 @@ Two approaches follow from it: [P6](#p6-catalog-access-how-the-agent-finds-the-p
 
 | Id | Approach | Rests on | Gate | Rung today | Needs a paid model |
 | --- | --- | --- | --- | --- | --- |
-| P1 | Gauge kit for existing stacks | T22, T12, T13, T18 | G1 | 1 | No for rungs 1 and 2 |
+| P1 | Gauge kit for existing stacks | T22, T12, T13, T18 | G1 | 1, evidence in | No for rungs 1 and 2 |
 | P2 | Catalog and assembler | T14, T15, T16, T20 | G2, G3, G7 | 0 | Yes for the full E05 |
 | P3 | Pieces that carry business questions | T17 | G5 | 0 | Not set; decided when E06 is designed |
 | P4 | Blueprints | T19 | G6 | 0 | Not set; decided when E08 is designed |
@@ -113,7 +113,7 @@ Two approaches follow from it: [P6](#p6-catalog-access-how-the-agent-finds-the-p
 | What stops it | T22 refuted and T18 refuted |
 | Cost to test | The local model is enough for rungs 1 and 2 |
 | Depends on | Nothing |
-| State | Rung 1 in progress. E04 was preregistered on 2026-11-21 and its confirmatory campaign is running. No verdict yet |
+| State | Rung 1: evidence in. E04 ran its confirmatory campaign on 2026-11-22: T22 `supported` (20 points, below d* = 30, and all from the `signature` slot), T11 `refuted`, T12 and T13 `undecidable`. It passes rung 1 only when the owner decides the amendment to G1 |
 
 ### P2. Catalog and assembler (the production line)
 
@@ -223,7 +223,7 @@ Since 2026-11-17 the research treats the stack as an experimental factor, and th
 
 | Order | Approach | Why, by the order rule |
 | --- | --- | --- |
-| 1 | P1 | Cheapest test that can stop a valuable approach (rule 2), no paid model (rule 4), and its test is already running |
+| 1 | P1 | Cheapest test that can stop a valuable approach (rule 2), no paid model (rule 4), and its test ran on 2026-11-22 |
 | 2 | P6 | Its test depends on no verdict, needs no Docker and no paid model (rules 2 and 4) |
 | 3 | P7 | Needs the attempts of E04 as the source of its lessons, and no paid model (rule 4) |
 | 4 | P2 | Others depend on it (rule 3). Its full test waits for the owner's decision on model and budget (rule 4) |
@@ -231,7 +231,7 @@ Since 2026-11-17 the research treats the stack as an experimental factor, and th
 | 6 | P4 | Depends on P2, and the mix cannot be assembled yet |
 | 7 | P5 | The most expensive to test, and it depends on most of the others |
 
-"Now" is P1 at rung 1, which is the E04 confirmatory campaign. This matches the "Now" row of the [roadmap](roadmap.md).
+"Now" is P1 at rung 1: its E04 evidence is in (2026-11-22), and what remains is the owner's decision on the amendment to G1. This matches the "Now" row of the [roadmap](roadmap.md).
 
 ## What only the owner can decide
 

@@ -1,11 +1,11 @@
 # Roadmap
 
-The instrument for E04 is landed on `main` and was hardened on 2026-11-18: the four problems that blocked the preregistration are closed. The judge result of each attempt has been recorded since 2026-11-18. The E04 exploratory campaign ran on 2026-11-18 on the local 7B model: both arms had 4 of 10 runs correct, with no verdict. The owner confirmed the E04 criteria, and E04 was preregistered on 2026-11-21 with the tag `prereg/E04`. The next step is the confirmatory campaign of 100 runs and its analysis. Nothing of the product is built, and no product code is written before a gate in the [decision map](decisions.md#decision-map) is met.
+The instrument for E04 is landed on `main` and was hardened on 2026-11-18: the four problems that blocked the preregistration are closed. The judge result of each attempt has been recorded since 2026-11-18. The E04 exploratory campaign ran on 2026-11-18 on the local 7B model: both arms had 4 of 10 runs correct, with no verdict. The owner confirmed the E04 criteria, and E04 was preregistered on 2026-11-21 with the tag `prereg/E04`. The confirmatory campaign ran on 2026-11-22 (100 runs): T22 `supported`, T11 `refuted`, T12 and T13 `undecidable`. The owner reads the verdicts and decides on the amendment to G1. Nothing of the product is built, and no product code is written before a gate in the [decision map](decisions.md#decision-map) is met.
 
 | Horizon | Work | Theses | Waits for |
 | --- | --- | --- | --- |
-| [Now](#now) | The E04 confirmatory campaign of 100 runs and its analysis (preregistered on 2026-11-21; the exploratory campaign ran on 2026-11-18) | T11, T12, T13, T22 | Nothing. The tag `prereg/E04` is set |
-| [Next](#next) | E05 local variant (7B), if the owner chooses it, then E07, E06, E08 | T14 and T20 for the E05 local variant, then T18, T17, T19 | The report of E04, and the exploratory run of each experiment |
+| [Now](#now) | The owner reads the E04 verdicts (2026-11-22) and decides on the amendment to G1 | T11, T12, T13, T22 | The owner's decision on the amendment to G1 |
+| [Next](#next) | E09 (T23), then E10 (T24), in the order of [`product.md`](product.md#the-order-today). Then E05 local variant (7B), if the owner chooses it, then E07, E06, E08 | T23 and T24, then T14 and T20 for the E05 local variant, then T18, T17, T19 | Nothing for E09. E10 needs the E04 attempts, which are recorded |
 | [Later](#later) | Stronger models, the full E05 (T15 and T16 included), Go as a fifth stack, the frontend gauge | T6, T15, T16, T21, T7 | The owner's decision on model and budget. T14 supported |
 
 This roadmap was proposed by the assistant on 2026-11-17, from the owner's statement of the same day: research first, several theses on several stacks, and decide from the results. The instrument state and the order of the "Now" steps were updated on 2026-11-18. The order of those steps is a proposal of the assistant. The owner's standing instruction of 2026-11-17 is to start testing the theses once the path is clear.
@@ -19,7 +19,7 @@ This roadmap was proposed by the assistant on 2026-11-17, from the owner's state
 | Model | Qwen2.5-Coder 7B Instruct, Q4_K_M quantization, on GPU: about 1,400 tokens per second reading and about 55 writing. The exact identifier is in [`../bench/README.md`](../bench/README.md) |
 | Machine | One local RTX 2070 with 8 GB. It only loads the 7B |
 | Whole task with the 7B | 34 runs between the pilot and the exploratory run, about 1.83 million tokens, 0 hidden tests passed. The 7B does not work as the instrument for the whole task |
-| Theses | None supported or refuted. See [`theses.md`](theses.md) |
+| Theses | On 2026-11-22: T22 `supported`, T11 `refuted`, T12 and T13 `undecidable`, for one 7B model, two stacks and five slots. See [`theses.md`](theses.md) |
 
 ## Now
 
@@ -66,6 +66,8 @@ Other changes of 2026-11-18, none of them a problem found by an experiment:
 
 [E04](../experiments/E04-slot-gauge/README.md) tests the gauge at slot level (T11 to T13) on the local 7B, in Next.js and Django. The per-attempt judge result (item 5) is done, and the exploratory campaign ran on 2026-11-18: 4 of 10 correct runs in each arm, the gauge in view detected wrong code far more often, and no run was repaired after its first attempt. T22 was proposed from it. The numbers are in the record.
 
+The confirmatory campaign ran on 2026-11-22: 100 runs, one look. T22 is `supported`, but its estimate of 20 points is below the d* of 30 points, and the whole difference comes from the `signature` slot. T11 is `refuted`. T12 and T13 are `undecidable`. The owner reads these verdicts and decides on the amendment to G1. The verdicts are in [`theses.md`](theses.md#verdicts-of-e04-2026-11-22).
+
 | Step | What happens | State |
 | --- | --- | --- |
 | Controls | The reference with one slot left unfilled, per slot and per stack. The reference alone, three times in a row on both stacks | Done on 2026-11-11 and 2026-11-18 |
@@ -74,8 +76,8 @@ Other changes of 2026-11-18, none of them a problem found by an experiment:
 | Revise the criterion | T11 asked for 20 points with 25 runs per arm, which cannot be detected. The assistant proposed on 2026-11-18 d* = 30 points, a stratified exact test, and 100 or 120 runs. See [`theses.md`](theses.md#t11-was-revised-on-2026-11-18) | Proposed on 2026-11-18. Confirmed by the owner on 2026-11-21 |
 | Confirm | The owner confirms the criteria of T11 to T13 and T22, the plan of 100 runs, and the slot list | Done on 2026-11-21 |
 | Preregister | The tag `prereg/E04` and the harness hash freeze the design | Done on 2026-11-21: tag `prereg/E04`, harness hash `3b3adef503d66d97` |
-| Confirmatory run | On the local 7B | To do |
-| Report | Published whatever the outcome. The registry and this roadmap are updated | To do |
+| Confirmatory run | On the local 7B | Done on 2026-11-22: 100 runs, one look |
+| Report | Published whatever the outcome. The registry and this roadmap are updated | Done on 2026-11-22: the verdicts are in the record and in [`theses.md`](theses.md) |
 
 ## Next
 
@@ -108,7 +110,7 @@ Other changes of 2026-11-18, none of them a problem found by an experiment:
 Both were proposed by the assistant on 2026-11-21, after the owner's request of that day. Neither is designed or confirmed, and neither needs a paid model. See [`product.md`](product.md#deterministic-first).
 
 - [E09](../experiments/E09-finding-the-piece/README.md) (T23) comes first: it needs no verdict, no Docker and no paid model.
-- [E10](../experiments/E10-lessons-from-the-gauge/README.md) (T24) comes after the E04 analysis, because its lessons come from the attempts of E04.
+- [E10](../experiments/E10-lessons-from-the-gauge/README.md) (T24) comes second: its lessons come from the attempts of E04, whose analysis is done on 2026-11-22.
 
 ## Later
 

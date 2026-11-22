@@ -1,6 +1,6 @@
 # Experiments
 
-**No thesis has a verdict for or against the idea yet.** Three experiments have run. A 7B local model scored zero hidden tests in all 34 full-task runs, in every arm, so nothing could be compared. T8 to T10 were discarded after controls that used no model. The next experiment to run is E04. Its exploratory campaign ran on 2026-11-18: both arms had 4 of 10 runs correct, with no verdict. The owner confirmed the criteria on 2026-11-21, and E04 was preregistered with the tag `prereg/E04` on the same day. The confirmatory campaign of 100 runs is next.
+**Two theses have a verdict for or against the idea, both from E04 on 2026-11-22: T22 is supported and T11 is refuted.** The scope is one 7B model, two stacks and five slots. E04 also left T12 and T13 undecidable. Before it, three experiments ran. A 7B local model scored zero hidden tests in all 34 full-task runs, in every arm, so nothing could be compared. T8 to T10 were discarded after controls that used no model. The exploratory campaign of E04 ran on 2026-11-18: both arms had 4 of 10 runs correct, with no verdict. The owner confirmed the criteria on 2026-11-21, and E04 was preregistered with the tag `prereg/E04` on the same day.
 
 Each folder holds one record. The rules are in [`docs/method.md`](../docs/method.md), the theses in [`docs/theses.md`](../docs/theses.md) and the order of work in [`docs/roadmap.md`](../docs/roadmap.md).
 
@@ -11,7 +11,7 @@ Each folder holds one record. The rules are in [`docs/method.md`](../docs/method
 | [E01](E01-pilot-full-task/README.md) | 2026-11-09 | T1, T2, T3, T4 | `reported` | T1 to T3 `undecidable` (floor effect). T4 never ran | All 18 runs scored 0 of 21 and 0 of 26 hidden tests in every arm, so no arm can be compared |
 | [E02](E02-no-model-controls/README.md) | 2026-11-10 and 11 | T8, T9, T10 | `reported` (control) | None. T8 to T10 `discarded` before running | T8 was met by construction and T9 divided by zero. Two separate hidden suites caught the same rounding error |
 | [E03](E03-exploratory-loop-fixes/README.md) | 2026-11-11 (UTC) | None (exploratory) | `reported` (exploratory) | None | After the loop fixes, 16 of 16 full-task runs still scored zero. The 7B is not an instrument for the full task |
-| [E04](E04-slot-gauge/README.md) | Not run | T11, T12, T13, T22 | `preregistered` | None yet | Unfilled-slot controls are done. The criteria were revised on 2026-11-18 (proposed by the assistant) and the five instrument problems are closed, including per-attempt judge results. The exploratory campaign ran on 2026-11-18: 4 of 10 correct runs in each arm, no verdict. T22 was proposed from it. The owner confirmed the criteria on 2026-11-21, and E04 was preregistered with the tag `prereg/E04` on the same day. The confirmatory campaign of 100 runs is next |
+| [E04](E04-slot-gauge/README.md) | 2026-11-22 | T11, T12, T13, T22 | `reported` | T22 `supported`, T11 `refuted`, T12 and T13 `undecidable` (2026-11-22) | 100 runs, one look. T22: 37 of 50 right decisions against 27 of 50, +20.0 points, below d* = 30 points and all from the `signature` slot. T11: 19 of 50 against 21 of 50 correct, -4.0 points. No run became correct after its first attempt. The exploratory campaign of 2026-11-18 had 4 of 10 correct in each arm |
 | [E05](E05-line-vs-workshop/README.md) | Not run | T14, T15, T16, T20 | `proposed` | None yet | The central comparison: assembling against writing from scratch, inside the same stack. Arms are an assistant proposal |
 | [E06](E06-piece-questions/README.md) | Not run | T17 | `proposed` | None yet | Do a piece's questions recover the rules a client left out? The harness has no question channel yet |
 | [E07](E07-independent-gauge/README.md) | Not run | T18 | `proposed` | None yet | Does a gauge by another author detect more than the model's own tests? "Detects" is not defined yet |
@@ -30,6 +30,8 @@ Recounted from the `data/` folders of E01 and E03.
 | E01, counted runs | 18 | 0 | 953,818 |
 | E03 | 16 | 0 | 872,057 |
 | Total | 34 | 0 of 34 (95% Wilson interval 0% to 10.2%) | 1,825,875 |
+
+E04 has another task, one slot per run, so it is not added to that total. Its exploratory campaign took 20 runs and 206,343 tokens, with 8 correct runs. Its confirmatory campaign took 100 runs and 954,079 tokens, with 40 correct runs.
 | E01, aborted first attempt (not counted) | 4 | 0 | 182,597 |
 
 ## Status values

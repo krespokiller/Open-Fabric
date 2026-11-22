@@ -46,7 +46,7 @@ Start with [`vision.md`](vision.md) for the idea and [`method.md`](method.md) fo
 | [E01 pilot, full task](../experiments/E01-pilot-full-task/README.md) | 2026-11-09 | T1 to T4 | Ran. Stopped at 18 of 27 runs. T1 to T3 undecidable |
 | [E02 no-model controls](../experiments/E02-no-model-controls/README.md) | 2026-11-10 and 11 | T8 to T10 | Ran without a model. The three theses were discarded |
 | [E03 exploratory run with loop fixes](../experiments/E03-exploratory-loop-fixes/README.md) | 2026-11-11 (UTC) | None, exploratory | Ran. Floor again |
-| [E04 slot gauge](../experiments/E04-slot-gauge/README.md) | Not run | T11 to T13, T22 | Preregistered on 2026-11-21 (tag `prereg/E04`). Exploratory campaign of 2026-11-18: 4 of 10 correct runs in each arm, no verdict. The confirmatory campaign of 100 runs is the next step |
+| [E04 slot gauge](../experiments/E04-slot-gauge/README.md) | 2026-11-21 and 22 | T11 to T13, T22 | Ran, 100 runs. T11 refuted, T22 supported, T12 and T13 undecidable. The T22 difference is 20 points, below the 30 named as d*, and all of it comes from one slot |
 | [E05 line against workshop](../experiments/E05-line-vs-workshop/README.md) | Not run | T14, T15, T16, T20 | Proposed |
 | [E06 piece questions](../experiments/E06-piece-questions/README.md) | Not run | T17 | Proposed |
 | [E07 independent gauge](../experiments/E07-independent-gauge/README.md) | Not run | T18 | Proposed |
