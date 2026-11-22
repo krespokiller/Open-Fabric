@@ -56,13 +56,29 @@ Con eso medimos dos caminos.
 
 En una fábrica el control de calidad no hace que la máquina corte mejor. Impide que la pieza mala salga a la calle.
 
-## Por dónde sigo
+## ¿Qué sigue?
 
-Tres tesis, todavía por probar:
+Tres tesis, todavía por probar. Cada una sale de un dato, y cada una se puede caer.
 
-1. **El motor.** Con un modelo más inteligente, la historia cambia.
-2. **La regla pegada a la pieza.** Si la IA no lee la letra pequeña, cada pieza debe traer sus reglas encima, no perdidas en un documento largo.
-3. **Que lo fácil sea lo correcto.** Python acertó el descuento sin querer. Si la pieza ya trae resuelto lo delicado, hasta una IA pequeña lo hace bien.
+**1. El motor.** Con un modelo más inteligente, la historia cambia.
+
+- **El dato:** la IA pequeña no mejoró con las pruebas (19 contra 21) y no arregló ni un error en 24 reintentos.
+- **La prueba:** el mismo experimento, cambiando solo el modelo.
+- **Se cae si:** con el modelo grande pasa lo mismo.
+
+**2. La regla pegada a la pieza.** Si la IA no lee la letra pequeña, cada pieza debe traer sus reglas encima, no perdidas en un documento largo.
+
+- **El dato:** la regla de la firma estaba escrita en una tarea de 12 mil caracteres. En 70 intentos no la usó.
+- **La prueba:** las mismas funciones, con sus reglas escritas al lado del hueco.
+- **Se cae si:** con la regla al lado sigue fallando. Ahí el problema sería el motor.
+
+**3. Que lo fácil sea lo correcto.** Python acertó el descuento sin querer. Si la pieza ya trae resuelto lo delicado, hasta una IA pequeña lo hace bien.
+
+- **El dato:** mismo código en los dos lenguajes. 9 de 10 en Python, 0 de 10 en JavaScript.
+- **La prueba:** darle a JavaScript el redondeo ya hecho y ver si deja de fallar.
+- **Se cae si:** la IA no usa lo que la pieza le da.
+
+Las dos últimas son gratis: corren en mi computador. La primera cuesta plata.
 
 Voy a contar cada experimento aquí, salga bien o salga mal.
 
