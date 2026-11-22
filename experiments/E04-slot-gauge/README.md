@@ -382,7 +382,7 @@ Read against [`docs/decisions.md`](../../docs/decisions.md) and [`docs/product.m
 | T11 is refuted for this scope | Gate G1, as written on 2026-11-17, names T11 or T18. It is not met. With the amendment proposed on 2026-11-21, which adds T22, it would be met for this scope. The owner decides on the amendment |
 | The gauge detects and the loop does not repair | For this model the value of the gauge is the decision at the end, not better code. The promise of approach P1 is that decision, and it should be measured with a budget of one call |
 | Retries cost 63% of the tokens and changed no result | A budget of 6 is waste for this model. The next designs use one call, or several independent samples with the gauge choosing among them |
-| The difference comes from one slot | The next question is how the detection changes with the size and the content of the gauge, over more slots. Five slots cannot answer it |
+| The difference comes from one slot | The next question is how the detection changes with the size and the content of the gauge, over more slots. Five slots cannot answer it. A cheap first step, proposed by the assistant on 2026-11-22: replay the wrong answers of this campaign against other gauges. The 60 wrong runs are real failures of a model, the replay needs no model call, and its result is the share of wrong answers that each gauge lets through |
 | The stack matters more than the arm | Django gave 14 of 25 correct runs in each arm, and Next.js 5 and 7. T20 reads this in [E05](../E05-line-vs-workshop/README.md) |
 | The model wrote `signature` and `webhook` wrong in all 40 runs | These two slots are at the floor for this model. They can show detection and cannot show a gain in correctness |
 
