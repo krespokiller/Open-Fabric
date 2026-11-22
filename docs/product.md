@@ -18,6 +18,21 @@ Summary:
 | P6 | Catalog access: how the agent finds the piece | G8 | 0 | Stated |
 | P7 | Memory of the line: lessons kept from the gauge | G9 | 0 | Stated |
 
+## The end: what done means
+
+**Proposed by the assistant on 2026-11-21 from the owner's statements. Not confirmed by the owner.** The work ends when these six things are true.
+
+| # | Done means | The owner said it on |
+| --- | --- | --- |
+| 1 | **A verdict on whether it is worth it.** Every approach in this document has passed its rungs or has been stopped, with correct runs and tokens counted and the rules frozen before the data | 2026-11-09 |
+| 2 | **Tested in many ways.** The verdicts hold for more than one model, including a real agent, for more than one stack and for more slots than the five of E04 | 2026-11-09 |
+| 3 | **Order.** Every approach has a card, a gate and a place in the order, and everything is on `main` | 2026-11-21 |
+| 4 | **Deterministic first.** The tool does what a rule can do, and every step done by a model has a gauge with a measured error rate | 2026-11-21 |
+| 5 | **Numbers, not agreement.** A result against the thesis is published like one in favour | 2026-11-11 |
+| 6 | **A product, if the evidence supports one.** It is built under the two outputs: clean, scalable code in OpenFabric and in each piece. If the evidence refutes it, the benchmark and the negative result are what the work delivers | 2026-11-18 |
+
+E04 is the first step towards point 1, for P1. It does not meet point 2: it has one model, two stacks and five slots.
+
 ## What this document is
 
 [`theses.md`](theses.md) orders the claims. The [decision map](decisions.md#decision-map) says which verdicts justify building what. This document adds the product side: each approach is something that could be built, written so that it can be tested and stopped.
